@@ -44,6 +44,7 @@ type SessionState = {
 
 type SessionRecord = {
   id: string
+  studentName: string
   playedAt: string
   gameId: GameId
   gameName: string
@@ -120,6 +121,7 @@ declare global {
 
 const STORAGE_KEY = 'mathapp-multiplication-history-v1'
 const SETTINGS_STORAGE_KEY = 'mathapp-multiplication-settings-v1'
+const STUDENT_NAME_STORAGE_KEY = 'mathapp-student-name-v1'
 const SESSION_LENGTH = 6
 const MAX_TABLE = 10
 const TABLE_OPTIONS = Array.from({ length: MAX_TABLE }, (_, index) => index + 1)
@@ -278,11 +280,58 @@ function loadHistory() {
   }
 
   try {
-    const parsed = JSON.parse(raw) as SessionRecord[]
-    return Array.isArray(parsed) ? parsed : []
+    const parsed = JSON.parse(raw) as Array<Partial<SessionRecord>>
+
+    if (!Array.isArray(parsed)) {
+      return [] as SessionRecord[]
+    }
+
+    return parsed.flatMap((record) => {
+      if (
+        typeof record.id !== 'string' ||
+        typeof record.playedAt !== 'string' ||
+        typeof record.gameId !== 'string' ||
+        typeof record.gameName !== 'string' ||
+        typeof record.score !== 'number' ||
+        typeof record.total !== 'number' ||
+        typeof record.accuracy !== 'number' ||
+        typeof record.durationSeconds !== 'number' ||
+        typeof record.rating !== 'string' ||
+        typeof record.encouragement !== 'string' ||
+        !Array.isArray(record.answers)
+      ) {
+        return []
+      }
+
+      return [
+        {
+          id: record.id,
+          studentName: typeof record.studentName === 'string' ? record.studentName : '',
+          playedAt: record.playedAt,
+          gameId: record.gameId as GameId,
+          gameName: record.gameName,
+          score: record.score,
+          total: record.total,
+          accuracy: record.accuracy,
+          durationSeconds: record.durationSeconds,
+          rating: record.rating,
+          encouragement: record.encouragement,
+          answers: record.answers as AnswerRecord[],
+        },
+      ]
+    })
   } catch {
     return []
   }
+}
+
+function loadStudentName() {
+  const raw = window.localStorage.getItem(STUDENT_NAME_STORAGE_KEY)
+  return typeof raw === 'string' ? raw.trim() : ''
+}
+
+function normalizeStudentName(value: string) {
+  return value.replace(/\s+/g, ' ').trim().slice(0, 40)
 }
 
 function loadPracticeSettings(): PracticeSettings {
@@ -518,10 +567,13 @@ function useSoundEffects() {
 function App() {
   const [history, setHistory] = useState<SessionRecord[]>(() => loadHistory())
   const [practiceSettings, setPracticeSettings] = useState<PracticeSettings>(() => loadPracticeSettings())
+  const [studentName, setStudentName] = useState(() => loadStudentName())
+  const [studentNameInput, setStudentNameInput] = useState(() => loadStudentName())
   const [session, setSession] = useState<SessionState | null>(null)
   const [latestResult, setLatestResult] = useState<SessionRecord | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement))
   const [fullscreenError, setFullscreenError] = useState<string | null>(null)
+  const [studentNameError, setStudentNameError] = useState<string | null>(null)
   const [timerTick, setTimerTick] = useState(0)
   const [inputValue, setInputValue] = useState('')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
@@ -532,7 +584,11 @@ function App() {
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const nextQuestionTimeoutRef = useRef<number | null>(null)
 
-  const historyInsight = useMemo(() => getHistoryInsight(history), [history])
+  const studentHistory = useMemo(
+    () => history.filter((record) => record.studentName === studentName),
+    [history, studentName],
+  )
+  const historyInsight = useMemo(() => getHistoryInsight(studentHistory), [studentHistory])
   const currentQuestion = session?.questions[session.currentIndex] ?? null
   const currentGame = session ? GAME_CONFIGS[session.gameId] : null
   const speechRecognitionSupported = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -548,6 +604,15 @@ function App() {
   useEffect(() => {
     window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(practiceSettings))
   }, [practiceSettings])
+
+  useEffect(() => {
+    if (!studentName) {
+      window.localStorage.removeItem(STUDENT_NAME_STORAGE_KEY)
+      return
+    }
+
+    window.localStorage.setItem(STUDENT_NAME_STORAGE_KEY, studentName)
+  }, [studentName])
 
   useEffect(() => {
     if (!sessionStartedAt) {
@@ -607,6 +672,7 @@ function App() {
     const rating = getRating(score, finishedSession.questions.length)
     const record: SessionRecord = {
       id: crypto.randomUUID(),
+      studentName,
       playedAt: new Date().toISOString(),
       gameId: finishedSession.gameId,
       gameName: GAME_CONFIGS[finishedSession.gameId].title,
@@ -696,6 +762,11 @@ function App() {
   }
 
   const startGame = (gameId: GameId) => {
+    if (!studentName) {
+      setStudentNameError('Ingresa el nombre del estudiante antes de comenzar.')
+      return
+    }
+
     recognitionRef.current?.stop()
     sounds.playTap()
     setLatestResult(null)
@@ -705,7 +776,23 @@ function App() {
     setIsListening(false)
     setTimerTick(0)
     setVoiceMessage(null)
+    setStudentNameError(null)
     setSession(createSession(gameId, practiceSettings))
+  }
+
+  const saveStudentName = () => {
+    const normalizedName = normalizeStudentName(studentNameInput)
+
+    if (!normalizedName) {
+      setStudentNameError('Escribe el nombre del estudiante para guardar su progreso.')
+      return
+    }
+
+    sounds.playTap()
+    setStudentName(normalizedName)
+    setStudentNameInput(normalizedName)
+    setStudentNameError(null)
+    setLatestResult(null)
   }
 
   const togglePriorityMode = () => {
@@ -835,6 +922,7 @@ function App() {
             <span>Historial con reportes</span>
             <span>Celebracion con sonido y confeti</span>
             {fullscreenSupported && <span>Modo pantalla completa disponible</span>}
+            {studentName && <span>Estudiante: {studentName}</span>}
           </div>
         </div>
 
@@ -858,6 +946,41 @@ function App() {
             </div>
             <span className="session-badge">Sesion de {SESSION_LENGTH} preguntas</span>
           </div>
+
+          <section className="settings-card">
+            <div className="settings-header">
+              <div>
+                <p className="section-label">Estudiante</p>
+                <h3>Nombre para guardar avances</h3>
+              </div>
+            </div>
+
+            <p className="settings-description">
+              El nombre queda guardado en este dispositivo y cada resultado se registra con ese
+              estudiante.
+            </p>
+
+            <div className="student-form">
+              <input
+                type="text"
+                value={studentNameInput}
+                onChange={(event) => setStudentNameInput(event.target.value)}
+                placeholder="Ejemplo: Mateo"
+                aria-label="Nombre del estudiante"
+              />
+              <button type="button" onClick={saveStudentName}>
+                Guardar nombre
+              </button>
+            </div>
+
+            <p className="settings-summary">
+              {studentName
+                ? `Perfil activo: ${studentName}. Sus resultados quedaran guardados en este navegador.`
+                : 'Aun no hay un estudiante activo. Guarda un nombre antes de empezar a jugar.'}
+            </p>
+
+            {studentNameError && <p className="student-note">{studentNameError}</p>}
+          </section>
 
           <section className="settings-card">
             <div className="settings-header">
@@ -925,7 +1048,7 @@ function App() {
                   <h3>{game.title}</h3>
                   <p>{game.description}</p>
                   <small>{game.helperText}</small>
-                  <button type="button" onClick={() => startGame(game.id)}>
+                  <button type="button" onClick={() => startGame(game.id)} disabled={!studentName}>
                     {game.actionLabel}
                   </button>
                 </motion.article>
@@ -1050,6 +1173,7 @@ function App() {
               >
                 <p className="section-label">Fin de la partida</p>
                 <h2>{latestResult.rating}</h2>
+                <p className="student-result-name">Estudiante: {latestResult.studentName}</p>
                 <p className="hero-description">{latestResult.encouragement}</p>
 
                 <div className="result-stats">
@@ -1097,7 +1221,7 @@ function App() {
           <div className="section-heading">
             <div>
               <p className="section-label">Seguimiento</p>
-              <h2>Historial y reportes</h2>
+              <h2>{studentName ? `Historial de ${studentName}` : 'Historial y reportes'}</h2>
             </div>
           </div>
 
@@ -1132,7 +1256,7 @@ function App() {
               </div>
 
               <div className="history-list">
-                {history.map((sessionRecord) => (
+                {studentHistory.map((sessionRecord) => (
                   <article key={sessionRecord.id}>
                     <div>
                       <strong>{sessionRecord.gameName}</strong>
@@ -1158,7 +1282,11 @@ function App() {
           ) : (
             <div className="empty-state">
               <h3>Tu historial aparecera aqui</h3>
-              <p>Juega la primera partida para comenzar a revisar avances, puntajes y tablas a reforzar.</p>
+              <p>
+                {studentName
+                  ? 'Juega la primera partida para comenzar a revisar avances, puntajes y tablas a reforzar.'
+                  : 'Primero guarda el nombre del estudiante para empezar a registrar su progreso.'}
+              </p>
             </div>
           )}
         </aside>
