@@ -520,6 +520,8 @@ function App() {
   const [practiceSettings, setPracticeSettings] = useState<PracticeSettings>(() => loadPracticeSettings())
   const [session, setSession] = useState<SessionState | null>(null)
   const [latestResult, setLatestResult] = useState<SessionRecord | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement))
+  const [fullscreenError, setFullscreenError] = useState<string | null>(null)
   const [timerTick, setTimerTick] = useState(0)
   const [inputValue, setInputValue] = useState('')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
@@ -534,6 +536,8 @@ function App() {
   const currentQuestion = session?.questions[session.currentIndex] ?? null
   const currentGame = session ? GAME_CONFIGS[session.gameId] : null
   const speechRecognitionSupported = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
+  const fullscreenSupported =
+    document.fullscreenEnabled ?? Boolean(document.documentElement.requestFullscreen)
   const sessionStartedAt = session?.startedAt ?? null
   const elapsedSeconds = session ? timerTick : 0
 
@@ -558,6 +562,19 @@ function App() {
       window.clearInterval(intervalId)
     }
   }, [sessionStartedAt])
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+      setFullscreenError(null)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    }
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -770,22 +787,54 @@ function App() {
     setVoiceMessage(null)
   }
 
+  const toggleFullscreen = async () => {
+    sounds.playTap()
+
+    if (!fullscreenSupported) {
+      setFullscreenError('Tu navegador no permite pantalla completa en esta app.')
+      return
+    }
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else {
+        await document.documentElement.requestFullscreen()
+      }
+    } catch (error) {
+      console.error('No fue posible cambiar a pantalla completa.', error)
+      setFullscreenError('No se pudo activar pantalla completa. Intenta otra vez.')
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="hero-panel">
         <div className="hero-copy">
-          <p className="eyebrow">Math &gt; 3 basico &gt; Multiplicaciones</p>
+          <div className="hero-topbar">
+            <p className="eyebrow">Math &gt; 3 basico &gt; Multiplicaciones</p>
+            <button
+              type="button"
+              className="fullscreen-button"
+              onClick={() => void toggleFullscreen()}
+            >
+              {isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            </button>
+          </div>
           <h1>Tablas divertidas para aprender jugando</h1>
           <p className="hero-description">
             Sesiones cortas de 6 preguntas, feedback positivo, historial de avances y juegos
             disenados para reforzar las tablas del 1 al 10.
           </p>
 
+          {fullscreenError && <p className="fullscreen-note">{fullscreenError}</p>}
+
           <div className="hero-pills">
             <span>Tablas del 1 al 10</span>
             <span>6 preguntas por partida</span>
             <span>Historial con reportes</span>
             <span>Celebracion con sonido y confeti</span>
+            {fullscreenSupported && <span>Modo pantalla completa disponible</span>}
           </div>
         </div>
 
