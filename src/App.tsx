@@ -598,6 +598,7 @@ function App() {
   const [practiceSettings, setPracticeSettings] = useState<PracticeSettings>(() => loadPracticeSettings())
   const [studentName, setStudentName] = useState(() => loadStudentName())
   const [studentNameInput, setStudentNameInput] = useState(() => loadStudentName())
+  const [isEditingStudentName, setIsEditingStudentName] = useState(() => loadStudentName() === '')
   const [session, setSession] = useState<SessionState | null>(null)
   const [latestResult, setLatestResult] = useState<SessionRecord | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement))
@@ -825,8 +826,16 @@ function App() {
     sounds.playTap()
     setStudentName(normalizedName)
     setStudentNameInput(normalizedName)
+    setIsEditingStudentName(false)
     setStudentNameError(null)
     setLatestResult(null)
+  }
+
+  const editStudentName = () => {
+    sounds.playTap()
+    setStudentNameInput(studentName)
+    setIsEditingStudentName(true)
+    setStudentNameError(null)
   }
 
   const togglePriorityMode = () => {
@@ -954,6 +963,7 @@ function App() {
             </button>
           </div>
           <h1>Tablas divertidas para aprender jugando</h1>
+          {studentName && <p className="student-greeting">Hola, {studentName}! Listo para jugar y aprender.</p>}
           <p className="hero-description">
             Sesiones cortas de 6 preguntas, feedback positivo, historial de avances y juegos
             disenados para reforzar las tablas del 1 al 10.
@@ -1005,18 +1015,35 @@ function App() {
               estudiante.
             </p>
 
-            <div className="student-form">
-              <input
-                type="text"
-                value={studentNameInput}
-                onChange={(event) => setStudentNameInput(event.target.value)}
-                placeholder="Ejemplo: Mateo"
-                aria-label="Nombre del estudiante"
-              />
-              <button type="button" onClick={saveStudentName}>
-                Guardar nombre
-              </button>
-            </div>
+            {studentName && !isEditingStudentName ? (
+              <div className="student-card">
+                <div>
+                  <p className="section-label">Perfil activo</p>
+                  <strong>{studentName}</strong>
+                </div>
+                <button type="button" className="edit-student-button" onClick={editStudentName} aria-label="Editar nombre del estudiante">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path
+                      d="M4 20h4l10-10-4-4L4 16v4Zm13.7-11.3 1.6-1.6a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0L15 6l2.7 2.7Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <div className="student-form">
+                <input
+                  type="text"
+                  value={studentNameInput}
+                  onChange={(event) => setStudentNameInput(event.target.value)}
+                  placeholder="Ejemplo: Mateo"
+                  aria-label="Nombre del estudiante"
+                />
+                <button type="button" onClick={saveStudentName}>
+                  Guardar nombre
+                </button>
+              </div>
+            )}
 
             <p className="settings-summary">
               {studentName

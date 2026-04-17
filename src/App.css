@@ -50,6 +50,13 @@
   font-size: 1.02rem;
 }
 
+.student-greeting {
+  margin: 0;
+  color: #7c3aed;
+  font-weight: 800;
+  font-size: 1.08rem;
+}
+
 .fullscreen-button {
   padding: 10px 16px;
   border-radius: 999px;
@@ -181,6 +188,37 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.student-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: #faf7ff;
+}
+
+.student-card strong {
+  color: #27193a;
+  font-size: 1.2rem;
+}
+
+.edit-student-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+}
+
+.edit-student-button svg {
+  width: 22px;
+  height: 22px;
 }
 
 .question-count-form {
