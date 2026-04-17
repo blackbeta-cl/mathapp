@@ -1172,7 +1172,7 @@ function App() {
                 <div className="play-header">
                   <div>
                     <p className="section-label">Jugando: {currentGame.title}</p>
-                    <h2>{currentQuestion.prompt}</h2>
+                    <h2 className="play-question">{currentQuestion.prompt}</h2>
                   </div>
                   <button type="button" className="ghost-button" onClick={resetToHome}>
                     Volver
