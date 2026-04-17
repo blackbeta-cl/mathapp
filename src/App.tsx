@@ -113,7 +113,17 @@ type SpeechRecognitionLike = EventTarget & {
 
 type SpeechRecognitionConstructor = new () => SpeechRecognitionLike
 
+type FullscreenCapableElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void
+}
+
 declare global {
+  interface Document {
+    webkitExitFullscreen?: () => Promise<void> | void
+    webkitFullscreenElement?: Element | null
+    webkitFullscreenEnabled?: boolean
+  }
+
   interface Window {
     SpeechRecognition?: SpeechRecognitionConstructor
     webkitSpeechRecognition?: SpeechRecognitionConstructor
@@ -342,6 +352,10 @@ function loadHistory() {
   }
 }
 
+function saveHistory(records: SessionRecord[]) {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(records))
+}
+
 function loadStudentName() {
   const raw = window.localStorage.getItem(STUDENT_NAME_STORAGE_KEY)
   return typeof raw === 'string' ? raw.trim() : ''
@@ -349,6 +363,23 @@ function loadStudentName() {
 
 function normalizeStudentName(value: string) {
   return value.replace(/\s+/g, ' ').trim().slice(0, 40)
+}
+
+function getStudentKey(name: string) {
+  return normalizeStudentName(name).toLowerCase()
+}
+
+function getFullscreenElement() {
+  return document.fullscreenElement ?? document.webkitFullscreenElement ?? null
+}
+
+function isFullscreenAvailable() {
+  return Boolean(
+    document.fullscreenEnabled ??
+      document.webkitFullscreenEnabled ??
+      document.documentElement.requestFullscreen ??
+      (document.documentElement as FullscreenCapableElement).webkitRequestFullscreen,
+  )
 }
 
 function loadPracticeSettings(): PracticeSettings {
@@ -601,7 +632,7 @@ function App() {
   const [isEditingStudentName, setIsEditingStudentName] = useState(() => loadStudentName() === '')
   const [session, setSession] = useState<SessionState | null>(null)
   const [latestResult, setLatestResult] = useState<SessionRecord | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement))
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(getFullscreenElement()))
   const [fullscreenError, setFullscreenError] = useState<string | null>(null)
   const [studentNameError, setStudentNameError] = useState<string | null>(null)
   const [timerTick, setTimerTick] = useState(0)
@@ -613,10 +644,11 @@ function App() {
   const sounds = useSoundEffects()
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const nextQuestionTimeoutRef = useRef<number | null>(null)
+  const studentKey = useMemo(() => getStudentKey(studentName), [studentName])
 
   const studentHistory = useMemo(
-    () => history.filter((record) => record.studentName === studentName),
-    [history, studentName],
+    () => history.filter((record) => getStudentKey(record.studentName) === studentKey),
+    [history, studentKey],
   )
   const historyInsight = useMemo(() => getHistoryInsight(studentHistory), [studentHistory])
   const availableQuestionCount = useMemo(() => createQuestionPool(practiceSettings).length, [practiceSettings])
@@ -627,13 +659,12 @@ function App() {
   const currentQuestion = session?.questions[session.currentIndex] ?? null
   const currentGame = session ? GAME_CONFIGS[session.gameId] : null
   const speechRecognitionSupported = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
-  const fullscreenSupported =
-    document.fullscreenEnabled ?? Boolean(document.documentElement.requestFullscreen)
+  const fullscreenSupported = isFullscreenAvailable()
   const sessionStartedAt = session?.startedAt ?? null
   const elapsedSeconds = session ? timerTick : 0
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(history))
+    saveHistory(history)
   }, [history])
 
   useEffect(() => {
@@ -665,14 +696,16 @@ function App() {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
+      setIsFullscreen(Boolean(getFullscreenElement()))
       setFullscreenError(null)
     }
 
     document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
     }
   }, [])
 
@@ -720,7 +753,11 @@ function App() {
       answers,
     }
 
-    setHistory((currentHistory) => [record, ...currentHistory].slice(0, 40))
+    setHistory((currentHistory) => {
+      const nextHistory = [record, ...currentHistory].slice(0, 40)
+      saveHistory(nextHistory)
+      return nextHistory
+    })
     setLatestResult(record)
     setSession(null)
     setInputValue('')
@@ -945,10 +982,20 @@ function App() {
     }
 
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen()
+      if (getFullscreenElement()) {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen()
+        } else {
+          await document.webkitExitFullscreen?.()
+        }
       } else {
-        await document.documentElement.requestFullscreen()
+        const rootElement = document.documentElement as FullscreenCapableElement
+
+        if (rootElement.requestFullscreen) {
+          await rootElement.requestFullscreen()
+        } else {
+          await rootElement.webkitRequestFullscreen?.()
+        }
       }
     } catch (error) {
       console.error('No fue posible cambiar a pantalla completa.', error)
