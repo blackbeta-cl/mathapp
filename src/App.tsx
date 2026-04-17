@@ -73,6 +73,7 @@ type HistoryInsight = {
 type PracticeSettings = {
   prioritizeSelectedTables: boolean
   prioritizedTables: number[]
+  questionCount: number
 }
 
 type SpeechRecognitionAlternativeLike = {
@@ -122,8 +123,9 @@ declare global {
 const STORAGE_KEY = 'mathapp-multiplication-history-v1'
 const SETTINGS_STORAGE_KEY = 'mathapp-multiplication-settings-v1'
 const STUDENT_NAME_STORAGE_KEY = 'mathapp-student-name-v1'
-const SESSION_LENGTH = 6
+const DEFAULT_QUESTION_COUNT = 6
 const MAX_TABLE = 10
+const MAX_QUESTION_COUNT = MAX_TABLE * MAX_TABLE
 const TABLE_OPTIONS = Array.from({ length: MAX_TABLE }, (_, index) => index + 1)
 
 const GAME_CONFIGS: Record<GameId, GameConfig> = {
@@ -192,26 +194,11 @@ function buildChoices(answer: number) {
   return shuffleArray([...options])
 }
 
-function getRandomTable(tables: number[]) {
-  return tables[randomInt(0, tables.length - 1)]
+function normalizeQuestionCount(questionCount: number) {
+  return Math.min(MAX_QUESTION_COUNT, Math.max(1, Math.round(questionCount)))
 }
 
-function createQuestion(settings: PracticeSettings): Question {
-  let factorA = randomInt(1, MAX_TABLE)
-  let factorB = randomInt(1, MAX_TABLE)
-
-  if (settings.prioritizeSelectedTables && settings.prioritizedTables.length > 0) {
-    const prioritizedTable = getRandomTable(settings.prioritizedTables)
-
-    if (Math.random() < 0.8) {
-      if (Math.random() < 0.5) {
-        factorA = prioritizedTable
-      } else {
-        factorB = prioritizedTable
-      }
-    }
-  }
-
+function buildQuestion(factorA: number, factorB: number): Question {
   const answer = factorA * factorB
 
   return {
@@ -224,13 +211,43 @@ function createQuestion(settings: PracticeSettings): Question {
   }
 }
 
+function createQuestionPool(settings: PracticeSettings) {
+  const prioritizedTables = [...new Set(settings.prioritizedTables)].sort((left, right) => left - right)
+  const questions: Question[] = []
+
+  if (settings.prioritizeSelectedTables && prioritizedTables.length > 0) {
+    prioritizedTables.forEach((table) => {
+      TABLE_OPTIONS.forEach((multiplier) => {
+        questions.push(buildQuestion(table, multiplier))
+      })
+    })
+
+    return questions
+  }
+
+  TABLE_OPTIONS.forEach((factorA) => {
+    TABLE_OPTIONS.forEach((factorB) => {
+      questions.push(buildQuestion(factorA, factorB))
+    })
+  })
+
+  return questions
+}
+
+function getEffectiveQuestionCount(settings: PracticeSettings) {
+  return Math.min(normalizeQuestionCount(settings.questionCount), createQuestionPool(settings).length)
+}
+
 function createSession(gameId: GameId, settings: PracticeSettings): SessionState {
+  const shuffledPool = shuffleArray(createQuestionPool(settings))
+  const questionCount = Math.min(normalizeQuestionCount(settings.questionCount), shuffledPool.length)
+
   return {
     gameId,
     startedAt: Date.now(),
     currentIndex: 0,
     answers: [],
-    questions: Array.from({ length: SESSION_LENGTH }, () => createQuestion(settings)),
+    questions: shuffledPool.slice(0, questionCount),
   }
 }
 
@@ -341,6 +358,7 @@ function loadPracticeSettings(): PracticeSettings {
     return {
       prioritizeSelectedTables: false,
       prioritizedTables: [],
+      questionCount: DEFAULT_QUESTION_COUNT,
     }
   }
 
@@ -356,11 +374,16 @@ function loadPracticeSettings(): PracticeSettings {
     return {
       prioritizeSelectedTables: Boolean(parsed.prioritizeSelectedTables),
       prioritizedTables,
+      questionCount:
+        typeof parsed.questionCount === 'number'
+          ? normalizeQuestionCount(parsed.questionCount)
+          : DEFAULT_QUESTION_COUNT,
     }
   } catch {
     return {
       prioritizeSelectedTables: false,
       prioritizedTables: [],
+      questionCount: DEFAULT_QUESTION_COUNT,
     }
   }
 }
@@ -595,6 +618,11 @@ function App() {
     [history, studentName],
   )
   const historyInsight = useMemo(() => getHistoryInsight(studentHistory), [studentHistory])
+  const availableQuestionCount = useMemo(() => createQuestionPool(practiceSettings).length, [practiceSettings])
+  const effectiveQuestionCount = useMemo(
+    () => getEffectiveQuestionCount(practiceSettings),
+    [practiceSettings],
+  )
   const currentQuestion = session?.questions[session.currentIndex] ?? null
   const currentGame = session ? GAME_CONFIGS[session.gameId] : null
   const speechRecognitionSupported = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
@@ -823,6 +851,17 @@ function App() {
     })
   }
 
+  const updateQuestionCount = (value: string) => {
+    const numericValue = Number(value)
+
+    setPracticeSettings((currentSettings) => ({
+      ...currentSettings,
+      questionCount: Number.isFinite(numericValue)
+        ? normalizeQuestionCount(numericValue)
+        : DEFAULT_QUESTION_COUNT,
+    }))
+  }
+
   const startListening = () => {
     if (!session || session.gameId !== 'voice' || !currentQuestion || isTransitioning) {
       return
@@ -950,7 +989,7 @@ function App() {
               <p className="section-label">Juegos del modulo</p>
               <h2>Elige como quieres practicar</h2>
             </div>
-            <span className="session-badge">Sesion de {SESSION_LENGTH} preguntas</span>
+            <span className="session-badge">Sesion de {effectiveQuestionCount} ejercicios</span>
           </div>
 
           <section className="settings-card">
@@ -1037,6 +1076,38 @@ function App() {
               {practiceSettings.prioritizeSelectedTables && practiceSettings.prioritizedTables.length > 0
                 ? `Prioridad activa en: ${practiceSettings.prioritizedTables.map((table) => table.toString()).join(', ')}`
                 : 'Sin prioridad activa. Las partidas mezclan todas las tablas del 1 al 10.'}
+            </p>
+          </section>
+
+          <section className="settings-card">
+            <div className="settings-header">
+              <div>
+                <p className="section-label">Duracion del juego</p>
+                <h3>Cuantos ejercicios quieres por partida</h3>
+              </div>
+            </div>
+
+            <p className="settings-description">
+              El valor por defecto es {DEFAULT_QUESTION_COUNT}. La app evita repetir ejercicios en
+              una misma sesion y ajusta el maximo segun las tablas disponibles.
+            </p>
+
+            <div className="question-count-form">
+              <input
+                type="number"
+                min={1}
+                max={availableQuestionCount}
+                value={practiceSettings.questionCount}
+                onChange={(event) => updateQuestionCount(event.target.value)}
+                aria-label="Cantidad de ejercicios por juego"
+              />
+              <span className="question-count-pill">Disponibles: {availableQuestionCount}</span>
+            </div>
+
+            <p className="settings-summary">
+              {practiceSettings.questionCount > effectiveQuestionCount
+                ? `Configuraste ${practiceSettings.questionCount}, pero esta combinacion permite ${effectiveQuestionCount} ejercicios unicos.`
+                : `Cada juego tendra ${effectiveQuestionCount} ejercicios unicos.`}
             </p>
           </section>
 
@@ -1243,7 +1314,7 @@ function App() {
                   <span>precision promedio</span>
                 </article>
                 <article>
-                  <strong>{historyInsight.bestScore}/{SESSION_LENGTH}</strong>
+                  <strong>{historyInsight.bestScore} aciertos</strong>
                   <span>mejor puntaje</span>
                 </article>
                 <article>
