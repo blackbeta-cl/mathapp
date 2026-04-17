@@ -731,7 +731,7 @@ function App() {
     setVoiceMessage(null)
   }
 
-  const queueNextStep = (updatedSession: SessionState, answers: AnswerRecord[]) => {
+  const queueNextStep = (updatedSession: SessionState, answers: AnswerRecord[], delay = 900) => {
     setIsTransitioning(true)
 
     nextQuestionTimeoutRef.current = window.setTimeout(() => {
@@ -752,7 +752,7 @@ function App() {
       setIsTransitioning(false)
       setIsListening(false)
       setVoiceMessage(null)
-    }, 900)
+    }, delay)
   }
 
   const submitAnswer = (userAnswer: string) => {
@@ -787,13 +787,21 @@ function App() {
         : `Casi. La respuesta correcta era ${currentQuestion.answer}.`,
     })
 
+    if (session.gameId === 'voice') {
+      setVoiceMessage(
+        correct
+          ? `Muy bien. Dijiste ${trimmedAnswer} y era correcto.`
+          : `Escuche ${trimmedAnswer}, pero la respuesta correcta es ${currentQuestion.answer}.`,
+      )
+    }
+
     if (correct) {
       sounds.playCorrect()
     } else {
       sounds.playWrong()
     }
 
-    queueNextStep(session, answers)
+    queueNextStep(session, answers, session.gameId === 'voice' && !correct ? 1800 : 900)
   }
 
   const startGame = (gameId: GameId) => {
