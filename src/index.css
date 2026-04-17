@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Fredoka:wght@400;500;600;700&display=swap');
+
+:root {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 500;
+  color: #3d3150;
+  background:
+    radial-gradient(circle at top left, rgba(255, 214, 102, 0.55), transparent 28%),
+    radial-gradient(circle at top right, rgba(125, 211, 252, 0.45), transparent 30%),
+    linear-gradient(180deg, #f9f7ff 0%, #fff8ef 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+strong,
+button {
+  font-family: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 4.4rem);
+  line-height: 0.98;
+  color: #27193a;
+}
+
+h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  color: #27193a;
+}
+
+h3 {
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
