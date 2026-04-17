@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 
 type GameId = 'input' | 'choice' | 'voice'
@@ -506,7 +506,7 @@ function getHistoryInsight(history: SessionRecord[]): HistoryInsight | null {
 function useSoundEffects() {
   const contextRef = useRef<AudioContext | null>(null)
 
-  const getContext = () => {
+  const getContext = useCallback(() => {
     if (!contextRef.current) {
       contextRef.current = new window.AudioContext()
     }
@@ -516,52 +516,58 @@ function useSoundEffects() {
     }
 
     return contextRef.current
-  }
+  }, [])
 
-  const playSequence = (tones: Array<{ frequency: number; duration: number; volume: number }>) => {
-    const context = getContext()
-    let startAt = context.currentTime
+  const playSequence = useCallback(
+    (tones: Array<{ frequency: number; duration: number; volume: number }>) => {
+      const context = getContext()
+      let startAt = context.currentTime
 
-    tones.forEach((tone) => {
-      const oscillator = context.createOscillator()
-      const gain = context.createGain()
+      tones.forEach((tone) => {
+        const oscillator = context.createOscillator()
+        const gain = context.createGain()
 
-      oscillator.type = 'triangle'
-      oscillator.frequency.setValueAtTime(tone.frequency, startAt)
-      gain.gain.setValueAtTime(0.0001, startAt)
-      gain.gain.exponentialRampToValueAtTime(tone.volume, startAt + 0.01)
-      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + tone.duration)
+        oscillator.type = 'triangle'
+        oscillator.frequency.setValueAtTime(tone.frequency, startAt)
+        gain.gain.setValueAtTime(0.0001, startAt)
+        gain.gain.exponentialRampToValueAtTime(tone.volume, startAt + 0.01)
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + tone.duration)
 
-      oscillator.connect(gain)
-      gain.connect(context.destination)
-      oscillator.start(startAt)
-      oscillator.stop(startAt + tone.duration)
+        oscillator.connect(gain)
+        gain.connect(context.destination)
+        oscillator.start(startAt)
+        oscillator.stop(startAt + tone.duration)
 
-      startAt += tone.duration * 0.85
-    })
-  }
+        startAt += tone.duration * 0.85
+      })
+    },
+    [getContext],
+  )
 
-  return {
-    playTap: () => playSequence([{ frequency: 420, duration: 0.08, volume: 0.04 }]),
-    playCorrect: () =>
-      playSequence([
-        { frequency: 440, duration: 0.12, volume: 0.05 },
-        { frequency: 554, duration: 0.12, volume: 0.05 },
-        { frequency: 659, duration: 0.18, volume: 0.06 },
-      ]),
-    playWrong: () =>
-      playSequence([
-        { frequency: 260, duration: 0.12, volume: 0.04 },
-        { frequency: 210, duration: 0.18, volume: 0.05 },
-      ]),
-    playWin: () =>
-      playSequence([
-        { frequency: 523, duration: 0.1, volume: 0.05 },
-        { frequency: 659, duration: 0.1, volume: 0.05 },
-        { frequency: 784, duration: 0.14, volume: 0.06 },
-        { frequency: 988, duration: 0.2, volume: 0.06 },
-      ]),
-  }
+  return useMemo(
+    () => ({
+      playTap: () => playSequence([{ frequency: 420, duration: 0.08, volume: 0.04 }]),
+      playCorrect: () =>
+        playSequence([
+          { frequency: 440, duration: 0.12, volume: 0.05 },
+          { frequency: 554, duration: 0.12, volume: 0.05 },
+          { frequency: 659, duration: 0.18, volume: 0.06 },
+        ]),
+      playWrong: () =>
+        playSequence([
+          { frequency: 260, duration: 0.12, volume: 0.04 },
+          { frequency: 210, duration: 0.18, volume: 0.05 },
+        ]),
+      playWin: () =>
+        playSequence([
+          { frequency: 523, duration: 0.1, volume: 0.05 },
+          { frequency: 659, duration: 0.1, volume: 0.05 },
+          { frequency: 784, duration: 0.14, volume: 0.06 },
+          { frequency: 988, duration: 0.2, volume: 0.06 },
+        ]),
+    }),
+    [playSequence],
+  )
 }
 
 function App() {
