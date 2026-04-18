@@ -320,6 +320,13 @@
   color: #27193a;
 }
 
+.sticker-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .sticker-card p,
 .reward-banner p,
 .sticker-card small {
@@ -344,6 +351,37 @@
 
 .sticker-badge span {
   font-size: 2rem;
+}
+
+.sticker-rarity {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sticker-rarity-clasico {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.sticker-rarity-aventura {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.sticker-rarity-premium {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.sticker-rarity-legendario {
+  background: #ede9fe;
+  color: #6d28d9;
 }
 
 .student-form {

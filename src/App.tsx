@@ -82,11 +82,13 @@ type DrawerMode = 'settings' | 'collectibles' | null
 
 type StickerDefinition = {
   id: string
-  gameId: GameId
   name: string
-  emoji: string
+  rewardTable: number
+  rarity: 'clasico' | 'aventura' | 'premium' | 'legendario'
+  description: string
   background: string
   accent: string
+  emoji?: string
 }
 
 type EarnedSticker = StickerDefinition & {
@@ -94,6 +96,8 @@ type EarnedSticker = StickerDefinition & {
   earnedAt: string
   sessionName: string
   accuracy: number
+  weightedAccuracy: number
+  dominantTable: number
 }
 
 type SpeechRecognitionAlternativeLike = {
@@ -196,62 +200,108 @@ const FUTURE_GAMES = [
   'Jefe final por tabla: dominar una tabla completa antes de desbloquear la siguiente.',
 ]
 
-const STICKER_LIBRARY: Record<GameId, StickerDefinition[]> = {
-  input: [
-    {
-      id: 'rocket-star',
-      gameId: 'input',
-      name: 'Cohete estelar',
-      emoji: '🚀',
-      background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
-      accent: '#ffffff',
-    },
-    {
-      id: 'planet-master',
-      gameId: 'input',
-      name: 'Planeta experto',
-      emoji: '🪐',
-      background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)',
-      accent: '#ffffff',
-    },
-  ],
-  choice: [
-    {
-      id: 'jungle-crown',
-      gameId: 'choice',
-      name: 'Corona de selva',
-      emoji: '🦁',
-      background: 'linear-gradient(135deg, #f97316, #fb7185)',
-      accent: '#ffffff',
-    },
-    {
-      id: 'banana-champ',
-      gameId: 'choice',
-      name: 'Banana campeona',
-      emoji: '🍌',
-      background: 'linear-gradient(135deg, #f59e0b, #f97316)',
-      accent: '#ffffff',
-    },
-  ],
-  voice: [
-    {
-      id: 'echo-mic',
-      gameId: 'voice',
-      name: 'Microfono magico',
-      emoji: '🎤',
-      background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
-      accent: '#ffffff',
-    },
-    {
-      id: 'sound-wave',
-      gameId: 'voice',
-      name: 'Ola sonora',
-      emoji: '🔊',
-      background: 'linear-gradient(135deg, #0284c7, #22d3ee)',
-      accent: '#ffffff',
-    },
-  ],
-}
+const STICKER_LIBRARY: StickerDefinition[] = [
+  {
+    id: 'table-1-sprout',
+    rewardTable: 1,
+    rarity: 'clasico',
+    name: 'Brote inicial',
+    description: 'Premio base para dominar las tablas iniciales.',
+    background: 'linear-gradient(135deg, #dcfce7, #86efac)',
+    accent: '#166534',
+    emoji: '🌱',
+  },
+  {
+    id: 'table-2-flower',
+    rewardTable: 2,
+    rarity: 'clasico',
+    name: 'Flor veloz',
+    description: 'Un sticker suave para tablas faciles y consistentes.',
+    background: 'linear-gradient(135deg, #fce7f3, #f9a8d4)',
+    accent: '#9d174d',
+    emoji: '🌼',
+  },
+  {
+    id: 'table-3-sun',
+    rewardTable: 3,
+    rarity: 'clasico',
+    name: 'Sol brillante',
+    description: 'Recompensa alegre para una base solida.',
+    background: 'linear-gradient(135deg, #fde68a, #f59e0b)',
+    accent: '#78350f',
+    emoji: '☀️',
+  },
+  {
+    id: 'table-4-compass',
+    rewardTable: 4,
+    rarity: 'aventura',
+    name: 'Brjula de aventura',
+    description: 'Empiezan los desafios con mas movimiento.',
+    background: 'linear-gradient(135deg, #fed7aa, #fb923c)',
+    accent: '#7c2d12',
+    emoji: '🧭',
+  },
+  {
+    id: 'table-5-dino',
+    rewardTable: 5,
+    rarity: 'aventura',
+    name: 'Dino explorador',
+    description: 'Premio para sesiones de dificultad media.',
+    background: 'linear-gradient(135deg, #f5d0fe, #c4b5fd)',
+    accent: '#6b21a8',
+    emoji: '🦕',
+  },
+  {
+    id: 'table-6-shield',
+    rewardTable: 6,
+    rarity: 'aventura',
+    name: 'Escudo experto',
+    description: 'Marca que ya vienes subiendo de nivel.',
+    background: 'linear-gradient(135deg, #dcfce7, #86efac)',
+    accent: '#166534',
+    emoji: '🛡️',
+  },
+  {
+    id: 'premium-table-7-crown',
+    rewardTable: 7,
+    rarity: 'premium',
+    name: 'Corona dorada',
+    description: 'Sticker premium para dominar tablas exigentes.',
+    background: 'linear-gradient(135deg, #fecaca, #f97316)',
+    accent: '#ffffff',
+    emoji: '👑',
+  },
+  {
+    id: 'premium-table-8-gem',
+    rewardTable: 8,
+    rarity: 'premium',
+    name: 'Gema magnetica',
+    description: 'Premio premium reservado a multiplicaciones complejas.',
+    background: 'linear-gradient(135deg, #bfdbfe, #60a5fa)',
+    accent: '#ffffff',
+    emoji: '💎',
+  },
+  {
+    id: 'premium-table-9-bolt',
+    rewardTable: 9,
+    rarity: 'legendario',
+    name: 'Rayo legendario',
+    description: 'Un sticker elite para tablas muy dificiles.',
+    background: 'linear-gradient(135deg, #fdba74, #ef4444)',
+    accent: '#ffffff',
+    emoji: '⚡',
+  },
+  {
+    id: 'premium-table-10-comet',
+    rewardTable: 10,
+    rarity: 'legendario',
+    name: 'Cometa supremo',
+    description: 'La recompensa mas premium del album.',
+    background: 'linear-gradient(135deg, #86efac, #14b8a6)',
+    accent: '#ffffff',
+    emoji: '🌠',
+  },
+]
 
 function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min
@@ -452,29 +502,94 @@ function getStudentKey(name: string) {
   return normalizeStudentName(name).toLowerCase()
 }
 
-function getEarnedStickers(history: SessionRecord[]) {
-  const counters: Record<GameId, number> = {
-    input: 0,
-    choice: 0,
-    voice: 0,
+function getQuestionWeight(answer: Pick<AnswerRecord, 'factorA' | 'factorB' | 'expected'>) {
+  const mainTable = Math.max(answer.factorA, answer.factorB)
+  const supportTable = Math.min(answer.factorA, answer.factorB)
+
+  return answer.expected + mainTable * 6 + supportTable * 2
+}
+
+function formatStickerRarity(rarity: StickerDefinition['rarity']) {
+  switch (rarity) {
+    case 'clasico':
+      return 'Clasico'
+    case 'aventura':
+      return 'Aventura'
+    case 'premium':
+      return 'Premium'
+    case 'legendario':
+      return 'Legendario'
+    default:
+      return rarity
+  }
+}
+
+function getStickerDefinition(rewardTable: number) {
+  return (
+    STICKER_LIBRARY.find((sticker) => sticker.rewardTable === rewardTable) ??
+    STICKER_LIBRARY[STICKER_LIBRARY.length - 1]
+  )
+}
+
+function getStickerRewardMetrics(answers: AnswerRecord[]) {
+  const weightsByTable = new Map<number, number>()
+  const totalWeight = answers.reduce((sum, answer) => sum + getQuestionWeight(answer), 0)
+  const correctWeight = answers.reduce((sum, answer) => {
+    if (!answer.correct) {
+      return sum
+    }
+
+    const table = Math.max(answer.factorA, answer.factorB)
+    const questionWeight = getQuestionWeight(answer)
+    weightsByTable.set(table, (weightsByTable.get(table) ?? 0) + questionWeight)
+    return sum + questionWeight
+  }, 0)
+
+  const weightedAccuracy = totalWeight > 0 ? Math.round((correctWeight / totalWeight) * 100) : 0
+  const dominantTable =
+    [...weightsByTable.entries()].sort((left, right) => {
+      if (right[1] !== left[1]) {
+        return right[1] - left[1]
+      }
+
+      return right[0] - left[0]
+    })[0]?.[0] ?? 1
+
+  const eligible = answers.length > 0 && weightedAccuracy >= 90
+
+  return {
+    weightedAccuracy,
+    dominantTable,
+    rewardTable: Math.min(MAX_TABLE, dominantTable),
+    eligible,
+  }
+}
+
+function getEarnedSticker(session: SessionRecord) {
+  const rewardMetrics = getStickerRewardMetrics(session.answers)
+
+  if (!rewardMetrics.eligible) {
+    return null
   }
 
-  return history
-    .filter((session) => session.accuracy >= 90)
-    .map((session) => {
-      const stickers = STICKER_LIBRARY[session.gameId]
-      const sticker = stickers[counters[session.gameId] % stickers.length]
+  const sticker = getStickerDefinition(rewardMetrics.rewardTable)
 
-      counters[session.gameId] += 1
+  return {
+    ...sticker,
+    sessionId: session.id,
+    earnedAt: session.playedAt,
+    sessionName: session.gameName,
+    accuracy: session.accuracy,
+    weightedAccuracy: rewardMetrics.weightedAccuracy,
+    dominantTable: rewardMetrics.dominantTable,
+  } satisfies EarnedSticker
+}
 
-      return {
-        ...sticker,
-        sessionId: session.id,
-        earnedAt: session.playedAt,
-        sessionName: session.gameName,
-        accuracy: session.accuracy,
-      } satisfies EarnedSticker
-    })
+function getEarnedStickers(history: SessionRecord[]) {
+  return history.flatMap((session) => {
+    const sticker = getEarnedSticker(session)
+    return sticker ? [sticker] : []
+  })
 }
 
 function getFullscreenElement() {
@@ -784,10 +899,7 @@ function App() {
     challengeTimeLeftMs === null ? null : Math.max(0, Math.ceil(challengeTimeLeftMs / 1000))
   const challengeUrgency =
     challengeTimeLeftMs === null ? 0 : 1 - challengeTimeLeftMs / CHALLENGE_DURATION_MS
-  const latestEarnedSticker =
-    latestResult && latestResult.accuracy >= 90
-      ? earnedStickers.find((sticker) => sticker.sessionId === latestResult.id) ?? null
-      : null
+  const latestEarnedSticker = latestResult ? getEarnedSticker(latestResult) : null
 
   useEffect(() => {
     saveHistory(history)
@@ -1345,7 +1457,7 @@ function App() {
             </div>
 
             <p className="settings-description">
-              Consigue un sticker cada vez que logres 90% o mas en una partida.
+              Los stickers se desbloquean con 90% o mas de precision ponderada. Las tablas mas complejas entregan premios mas premium.
             </p>
 
             {earnedStickers.length > 0 ? (
@@ -1360,10 +1472,16 @@ function App() {
                       <span>{sticker.emoji}</span>
                     </div>
                     <div>
-                      <strong>{sticker.name}</strong>
+                      <div className="sticker-title-row">
+                        <strong>{sticker.name}</strong>
+                        <span className={`sticker-rarity sticker-rarity-${sticker.rarity}`}>
+                          {formatStickerRarity(sticker.rarity)}
+                        </span>
+                      </div>
                       <p>
-                        {sticker.sessionName} · {sticker.accuracy}% de precision
+                        {sticker.sessionName} · Tabla dominante {sticker.dominantTable} · {sticker.weightedAccuracy}% ponderado
                       </p>
+                      <small>{sticker.description}</small>
                       <small>
                         {new Intl.DateTimeFormat('es-CL', {
                           dateStyle: 'short',
@@ -1377,7 +1495,7 @@ function App() {
             ) : (
               <div className="empty-state">
                 <h3>Tu album aun esta vacio</h3>
-                <p>Juega, supera el 90% y empezaras a llenar tu coleccion de premios.</p>
+                <p>Juega, supera el 90% ponderado y empezaras a llenar tu coleccion de premios.</p>
               </div>
             )}
           </section>
@@ -1844,8 +1962,16 @@ function App() {
                         <span>{latestEarnedSticker.emoji}</span>
                       </div>
                       <div>
-                        <strong>Nuevo sticker desbloqueado: {latestEarnedSticker.name}</strong>
-                        <p>Ganado por superar el 90% en esta partida.</p>
+                        <div className="sticker-title-row">
+                          <strong>Nuevo sticker desbloqueado: {latestEarnedSticker.name}</strong>
+                          <span className={`sticker-rarity sticker-rarity-${latestEarnedSticker.rarity}`}>
+                            {formatStickerRarity(latestEarnedSticker.rarity)}
+                          </span>
+                        </div>
+                        <p>
+                          Ganado con {latestEarnedSticker.weightedAccuracy}% ponderado y tabla dominante{' '}
+                          {latestEarnedSticker.dominantTable}.
+                        </p>
                       </div>
                     </div>
                   )}
