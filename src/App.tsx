@@ -979,6 +979,7 @@ function App() {
   const resetToHome = () => {
     recognitionRef.current?.stop()
     setSession(null)
+    setLatestResult(null)
     setIsSettingsOpen(false)
     setFeedback(null)
     setInputValue('')
