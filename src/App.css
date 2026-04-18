@@ -3,6 +3,7 @@
   flex-direction: column;
   gap: 24px;
   padding: 28px;
+  position: relative;
 }
 
 .hero-panel,
@@ -27,11 +28,36 @@
   gap: 18px;
 }
 
+.app-topbar,
 .hero-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.app-topbar {
+  border-radius: 28px;
+  padding: 18px 24px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.student-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 16px;
+  border-radius: 999px;
+  background: #efe7ff;
+  color: #5b21b6;
+  font-weight: 700;
 }
 
 .eyebrow,
@@ -65,6 +91,7 @@
 }
 
 .fullscreen-note {
+  margin: 0;
   color: #9a3412;
   font-weight: 700;
 }
@@ -141,6 +168,14 @@
   gap: 24px;
 }
 
+.play-screen {
+  display: flex;
+}
+
+.game-focused-panel {
+  width: 100%;
+}
+
 .panel {
   border-radius: 28px;
   padding: 24px;
@@ -172,6 +207,48 @@
   border: 1px solid rgba(124, 58, 237, 0.14);
 }
 
+.drawer-card {
+  margin-top: 0;
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(21, 16, 38, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+.settings-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(100%, 420px);
+  height: 100vh;
+  padding: 24px;
+  box-sizing: border-box;
+  background: rgba(255, 250, 255, 0.98);
+  box-shadow: -18px 0 36px rgba(64, 35, 120, 0.16);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+}
+
+.settings-drawer.open {
+  transform: translateX(0);
+}
+
+.settings-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .settings-header {
   display: flex;
   align-items: center;
@@ -188,6 +265,45 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.onboarding-panel {
+  min-height: min(72vh, 720px);
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.onboarding-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(100%, 680px);
+  text-align: center;
+}
+
+.onboarding-form {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.onboarding-form input {
+  flex: 1 1 260px;
+  min-width: 0;
+  border: 2px solid #d9cbff;
+  border-radius: 18px;
+  padding: 14px 16px;
+  font: inherit;
+  color: #27193a;
+  background: white;
+}
+
+.onboarding-form input:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.14);
 }
 
 .student-card {
@@ -219,6 +335,26 @@
 .edit-student-button svg {
   width: 22px;
   height: 22px;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+}
+
+.icon-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.settings-toggle {
+  background: linear-gradient(135deg, #f97316, #ec4899);
 }
 
 .question-count-form {
@@ -651,15 +787,18 @@ button:disabled {
   }
 
   .panel,
-  .hero-panel {
+  .hero-panel,
+  .app-topbar {
     border-radius: 24px;
     padding: 18px;
   }
 
   .section-heading,
+  .app-topbar,
   .hero-topbar,
   .play-header,
   .settings-header,
+  .settings-drawer-header,
   .progress-row,
   .history-list article,
   .answer-review div {
@@ -673,5 +812,15 @@ button:disabled {
 
   .mascot-face {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .student-chip,
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .settings-drawer {
+    width: 100%;
+    padding: 18px;
   }
 }

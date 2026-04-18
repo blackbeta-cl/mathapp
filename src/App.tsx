@@ -630,6 +630,7 @@ function App() {
   const [studentName, setStudentName] = useState(() => loadStudentName())
   const [studentNameInput, setStudentNameInput] = useState(() => loadStudentName())
   const [isEditingStudentName, setIsEditingStudentName] = useState(() => loadStudentName() === '')
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [session, setSession] = useState<SessionState | null>(null)
   const [latestResult, setLatestResult] = useState<SessionRecord | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(Boolean(getFullscreenElement()))
@@ -658,6 +659,7 @@ function App() {
   )
   const currentQuestion = session?.questions[session.currentIndex] ?? null
   const currentGame = session ? GAME_CONFIGS[session.gameId] : null
+  const isPlaying = Boolean(session || latestResult)
   const speechRecognitionSupported = Boolean(window.SpeechRecognition || window.webkitSpeechRecognition)
   const fullscreenSupported = isFullscreenAvailable()
   const sessionStartedAt = session?.startedAt ?? null
@@ -850,6 +852,7 @@ function App() {
     recognitionRef.current?.stop()
     sounds.playTap()
     setLatestResult(null)
+    setIsSettingsOpen(false)
     setFeedback(null)
     setInputValue('')
     setIsTransitioning(false)
@@ -872,6 +875,7 @@ function App() {
     setStudentName(normalizedName)
     setStudentNameInput(normalizedName)
     setIsEditingStudentName(false)
+    setIsSettingsOpen(false)
     setStudentNameError(null)
     setLatestResult(null)
   }
@@ -880,7 +884,17 @@ function App() {
     sounds.playTap()
     setStudentNameInput(studentName)
     setIsEditingStudentName(true)
+    setIsSettingsOpen(true)
     setStudentNameError(null)
+  }
+
+  const openSettings = () => {
+    sounds.playTap()
+    setIsSettingsOpen(true)
+  }
+
+  const closeSettings = () => {
+    setIsSettingsOpen(false)
   }
 
   const togglePriorityMode = () => {
@@ -965,6 +979,7 @@ function App() {
   const resetToHome = () => {
     recognitionRef.current?.stop()
     setSession(null)
+    setIsSettingsOpen(false)
     setFeedback(null)
     setInputValue('')
     setIsTransitioning(false)
@@ -1003,471 +1018,533 @@ function App() {
     }
   }
 
+  if (!studentName) {
+    return (
+      <div className="app-shell">
+        <section className="panel onboarding-panel">
+          <div className="onboarding-content">
+            <p className="eyebrow">Bienvenido a Math &gt; 3 basico &gt; Multiplicaciones</p>
+            <h1>Antes de empezar, cuentame tu nombre</h1>
+            <p className="hero-description">
+              Lo usare para guardar tu progreso en este dispositivo y mostrarte tus resultados.
+            </p>
+
+            <div className="onboarding-form">
+              <input
+                type="text"
+                value={studentNameInput}
+                onChange={(event) => setStudentNameInput(event.target.value)}
+                placeholder="Ejemplo: Mateo"
+                aria-label="Nombre del estudiante"
+              />
+              <button type="button" onClick={saveStudentName}>
+                Comenzar
+              </button>
+            </div>
+
+            {studentNameError && <p className="student-note">{studentNameError}</p>}
+
+            <div className="hero-pills">
+              <span>Tu nombre es obligatorio</span>
+              <span>Se guarda solo en este navegador</span>
+              <span>Luego podras editarlo</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="app-shell">
-      <header className="hero-panel">
-        <div className="hero-copy">
-          <div className="hero-topbar">
-            <p className="eyebrow">Math &gt; 3 basico &gt; Multiplicaciones</p>
-            <button
-              type="button"
-              className="fullscreen-button"
-              onClick={() => void toggleFullscreen()}
-            >
-              {isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
-            </button>
-          </div>
-          <h1>Tablas divertidas para aprender jugando</h1>
-          {studentName && <p className="student-greeting">Hola, {studentName}! Listo para jugar y aprender.</p>}
-          <p className="hero-description">
-            Sesiones cortas de 6 preguntas, feedback positivo, historial de avances y juegos
-            disenados para reforzar las tablas del 1 al 10.
-          </p>
-
-          {fullscreenError && <p className="fullscreen-note">{fullscreenError}</p>}
-
-          <div className="hero-pills">
-            <span>Tablas del 1 al 10</span>
-            <span>6 preguntas por partida</span>
-            <span>Historial con reportes</span>
-            <span>Celebracion con sonido y confeti</span>
-            {fullscreenSupported && <span>Modo pantalla completa disponible</span>}
-            {studentName && <span>Estudiante: {studentName}</span>}
-          </div>
+      <header className="app-topbar panel">
+        <div>
+          <p className="eyebrow">Math &gt; 3 basico &gt; Multiplicaciones</p>
+          <p className="student-greeting">Hola, {studentName}! Listo para jugar y aprender.</p>
         </div>
 
-        <div className="mascot-card">
-          <div className="mascot-face" aria-hidden="true">
-            <span>+</span>
-            <span>x</span>
-            <span>=</span>
+        <div className="topbar-actions">
+          <div className="student-chip">
+            <span>{studentName}</span>
+            <button
+              type="button"
+              className="icon-button"
+              onClick={editStudentName}
+              aria-label="Editar nombre del estudiante"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M4 20h4l10-10-4-4L4 16v4Zm13.7-11.3 1.6-1.6a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0L15 6l2.7 2.7Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
           </div>
-          <p className="mascot-title">Mision del dia</p>
-          <strong>Dominar las tablas con alegria y constancia.</strong>
+
+          <button
+            type="button"
+            className="icon-button settings-toggle"
+            onClick={openSettings}
+            aria-label="Abrir configuracion"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M19.4 13a7.7 7.7 0 0 0 .1-2l2-1.6-2-3.4-2.4 1a8 8 0 0 0-1.7-1l-.3-2.6h-4l-.3 2.6a8 8 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.7 7.7 0 0 0 .1 2l-2 1.6 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.3 2.6h4l.3-2.6a8 8 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            className="fullscreen-button"
+            onClick={() => void toggleFullscreen()}
+          >
+            {isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+          </button>
         </div>
       </header>
 
-      <main className="content-grid">
-        <section className="panel game-panel">
-          <div className="section-heading">
+      {fullscreenError && <p className="fullscreen-note">{fullscreenError}</p>}
+
+      {isSettingsOpen && <button type="button" className="drawer-backdrop" aria-label="Cerrar configuracion" onClick={closeSettings} />}
+
+      <aside className={`settings-drawer ${isSettingsOpen ? 'open' : ''}`} aria-hidden={!isSettingsOpen}>
+        <div className="settings-drawer-header">
+          <div>
+            <p className="section-label">Configuracion</p>
+            <h2>Ajustes de la partida</h2>
+          </div>
+          <button type="button" className="ghost-button" onClick={closeSettings}>
+            Cerrar
+          </button>
+        </div>
+
+        <section className="settings-card drawer-card">
+          <div className="settings-header">
             <div>
-              <p className="section-label">Juegos del modulo</p>
-              <h2>Elige como quieres practicar</h2>
+              <p className="section-label">Estudiante</p>
+              <h3>Perfil activo</h3>
             </div>
-            <span className="session-badge">Sesion de {effectiveQuestionCount} ejercicios</span>
           </div>
 
-          <section className="settings-card">
-            <div className="settings-header">
-              <div>
-                <p className="section-label">Estudiante</p>
-                <h3>Nombre para guardar avances</h3>
-              </div>
-            </div>
-
-            <p className="settings-description">
-              El nombre queda guardado en este dispositivo y cada resultado se registra con ese
-              estudiante.
-            </p>
-
-            {studentName && !isEditingStudentName ? (
-              <div className="student-card">
-                <div>
-                  <p className="section-label">Perfil activo</p>
-                  <strong>{studentName}</strong>
-                </div>
-                <button type="button" className="edit-student-button" onClick={editStudentName} aria-label="Editar nombre del estudiante">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M4 20h4l10-10-4-4L4 16v4Zm13.7-11.3 1.6-1.6a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0L15 6l2.7 2.7Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="student-form">
-                <input
-                  type="text"
-                  value={studentNameInput}
-                  onChange={(event) => setStudentNameInput(event.target.value)}
-                  placeholder="Ejemplo: Mateo"
-                  aria-label="Nombre del estudiante"
-                />
-                <button type="button" onClick={saveStudentName}>
-                  Guardar nombre
-                </button>
-              </div>
-            )}
-
-            <p className="settings-summary">
-              {studentName
-                ? `Perfil activo: ${studentName}. Sus resultados quedaran guardados en este navegador.`
-                : 'Aun no hay un estudiante activo. Guarda un nombre antes de empezar a jugar.'}
-            </p>
-
-            {studentNameError && <p className="student-note">{studentNameError}</p>}
-          </section>
-
-          <section className="settings-card">
-            <div className="settings-header">
-              <div>
-                <p className="section-label">Configuracion</p>
-                <h3>Priorizar tablas especificas</h3>
-              </div>
-
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={practiceSettings.prioritizeSelectedTables}
-                  onChange={togglePriorityMode}
-                />
-                <span className="switch-track" aria-hidden="true">
-                  <span className="switch-thumb" />
-                </span>
-                <span className="switch-label">
-                  {practiceSettings.prioritizeSelectedTables ? 'Activado' : 'Desactivado'}
-                </span>
-              </label>
-            </div>
-
-            <p className="settings-description">
-              Marca una o varias tablas para que aparezcan con mayor frecuencia en las proximas
-              sesiones. Si el switch esta apagado, las preguntas usan todas las tablas por igual.
-            </p>
-
-            <div className="table-selector" role="group" aria-label="Seleccion de tablas prioritarias">
-              {TABLE_OPTIONS.map((table) => {
-                const isSelected = practiceSettings.prioritizedTables.includes(table)
-
-                return (
-                  <button
-                    key={table}
-                    type="button"
-                    className={`table-chip ${isSelected ? 'selected' : ''}`}
-                    onClick={() => togglePriorityTable(table)}
-                    aria-pressed={isSelected}
-                  >
-                    Tabla del {table}
-                  </button>
-                )
-              })}
-            </div>
-
-            <p className="settings-summary">
-              {practiceSettings.prioritizeSelectedTables && practiceSettings.prioritizedTables.length > 0
-                ? `Prioridad activa en: ${practiceSettings.prioritizedTables.map((table) => table.toString()).join(', ')}`
-                : 'Sin prioridad activa. Las partidas mezclan todas las tablas del 1 al 10.'}
-            </p>
-          </section>
-
-          <section className="settings-card">
-            <div className="settings-header">
-              <div>
-                <p className="section-label">Duracion del juego</p>
-                <h3>Cuantos ejercicios quieres por partida</h3>
-              </div>
-            </div>
-
-            <p className="settings-description">
-              El valor por defecto es {DEFAULT_QUESTION_COUNT}. La app evita repetir ejercicios en
-              una misma sesion y ajusta el maximo segun las tablas disponibles.
-            </p>
-
-            <div className="question-count-form">
+          {isEditingStudentName ? (
+            <div className="student-form">
               <input
-                type="number"
-                min={1}
-                max={availableQuestionCount}
-                value={practiceSettings.questionCount}
-                onChange={(event) => updateQuestionCount(event.target.value)}
-                aria-label="Cantidad de ejercicios por juego"
+                type="text"
+                value={studentNameInput}
+                onChange={(event) => setStudentNameInput(event.target.value)}
+                placeholder="Ejemplo: Mateo"
+                aria-label="Nombre del estudiante"
               />
-              <span className="question-count-pill">Disponibles: {availableQuestionCount}</span>
+              <button type="button" onClick={saveStudentName}>
+                Guardar nombre
+              </button>
             </div>
-
-            <p className="settings-summary">
-              {practiceSettings.questionCount > effectiveQuestionCount
-                ? `Configuraste ${practiceSettings.questionCount}, pero esta combinacion permite ${effectiveQuestionCount} ejercicios unicos.`
-                : `Cada juego tendra ${effectiveQuestionCount} ejercicios unicos.`}
-            </p>
-          </section>
-
-          {!session && !latestResult && (
-            <div className="game-grid">
-              {Object.values(GAME_CONFIGS).map((game) => (
-                <motion.article
-                  key={game.id}
-                  className="game-card"
-                  whileHover={{ y: -6 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                  style={{ '--card-accent': game.accent } as React.CSSProperties}
-                >
-                  <span className="game-badge">{game.badge}</span>
-                  <h3>{game.title}</h3>
-                  <p>{game.description}</p>
-                  <small>{game.helperText}</small>
-                  <button type="button" onClick={() => startGame(game.id)} disabled={!studentName}>
-                    {game.actionLabel}
-                  </button>
-                </motion.article>
-              ))}
+          ) : (
+            <div className="student-card">
+              <div>
+                <p className="section-label">Perfil activo</p>
+                <strong>{studentName}</strong>
+              </div>
+              <button type="button" className="edit-student-button" onClick={editStudentName} aria-label="Editar nombre del estudiante">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M4 20h4l10-10-4-4L4 16v4Zm13.7-11.3 1.6-1.6a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0L15 6l2.7 2.7Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </button>
             </div>
           )}
 
-          <AnimatePresence mode="wait">
-            {session && currentQuestion && currentGame ? (
-              <motion.section
-                key={`${session.gameId}-${session.currentIndex}`}
-                className="play-area"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -14 }}
-              >
-                <div className="play-header">
-                  <div>
-                    <p className="section-label">Jugando: {currentGame.title}</p>
-                    <h2 className="play-question">{currentQuestion.prompt}</h2>
-                  </div>
-                  <button type="button" className="ghost-button" onClick={resetToHome}>
-                    Volver
-                  </button>
-                </div>
-
-                <div className="progress-row">
-                  <div className="progress-track" aria-hidden="true">
-                    <span
-                      className="progress-fill"
-                      style={{
-                        width: `${((session.currentIndex + (feedback ? 1 : 0)) / session.questions.length) * 100}%`,
-                        background: currentGame.accent,
-                      }}
-                    />
-                  </div>
-                  <strong>
-                    Pregunta {session.currentIndex + 1} de {session.questions.length}
-                  </strong>
-                  <span className="timer-badge">Tiempo: {formatDuration(elapsedSeconds)}</span>
-                </div>
-
-                <p className="question-helper">
-                  {session.gameId === 'input' &&
-                    'Escribe el resultado y presiona responder para avanzar.'}
-                  {session.gameId === 'choice' &&
-                    'Toca una opcion correcta. Si fallas, aprenderas la respuesta al instante.'}
-                  {session.gameId === 'voice' &&
-                    'Di el resultado en voz alta usando numeros como "cuarenta y dos".'}
-                </p>
-
-                {session.gameId !== 'choice' && (
-                  <div className="answer-row">
-                    <input
-                      inputMode="numeric"
-                      value={inputValue}
-                      disabled={isTransitioning}
-                      onChange={(event) => setInputValue(event.target.value.replace(/[^\d]/g, ''))}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          submitAnswer(inputValue)
-                        }
-                      }}
-                      placeholder="Tu respuesta"
-                      aria-label="Ingresa tu respuesta"
-                    />
-                    <button type="button" onClick={() => submitAnswer(inputValue)} disabled={isTransitioning}>
-                      Responder
-                    </button>
-                    {session.gameId === 'voice' && (
-                      <button
-                        type="button"
-                        className={`voice-button ${isListening ? 'listening' : ''}`}
-                        onClick={startListening}
-                        disabled={!speechRecognitionSupported || isTransitioning}
-                      >
-                        {isListening ? 'Escuchando...' : 'Responder con voz'}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {session.gameId === 'choice' && (
-                  <div className="choice-grid">
-                    {currentQuestion.choices.map((choice) => (
-                      <button
-                        key={`${currentQuestion.id}-${choice}`}
-                        type="button"
-                        className="choice-button"
-                        disabled={isTransitioning}
-                        onClick={() => submitAnswer(String(choice))}
-                      >
-                        {choice}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {session.gameId === 'voice' && (
-                  <p className="voice-message">
-                    {speechRecognitionSupported
-                      ? voiceMessage ?? 'Tambien puedes escribir si prefieres.'
-                      : 'Tu navegador no soporta voz. Puedes usar los otros juegos.'}
-                  </p>
-                )}
-
-                {feedback && (
-                  <div className={`feedback-card ${feedback.correct ? 'success' : 'error'}`}>
-                    {feedback.message}
-                  </div>
-                )}
-              </motion.section>
-            ) : null}
-
-            {!session && latestResult ? (
-              <motion.section
-                key={latestResult.id}
-                className="result-panel"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -14 }}
-              >
-                <p className="section-label">Fin de la partida</p>
-                <h2>{latestResult.rating}</h2>
-                <p className="student-result-name">Estudiante: {latestResult.studentName}</p>
-                <p className="hero-description">{latestResult.encouragement}</p>
-
-                <div className="result-stats">
-                  <div>
-                    <strong>
-                      {latestResult.score}/{latestResult.total}
-                    </strong>
-                    <span>respuestas correctas</span>
-                  </div>
-                  <div>
-                    <strong>{latestResult.accuracy}%</strong>
-                    <span>precision</span>
-                  </div>
-                  <div>
-                    <strong>{formatDuration(latestResult.durationSeconds)}</strong>
-                    <span>tiempo total</span>
-                  </div>
-                </div>
-
-                <div className="result-actions">
-                  <button type="button" onClick={() => startGame(latestResult.gameId)}>
-                    Jugar de nuevo
-                  </button>
-                  <button type="button" className="ghost-button" onClick={resetToHome}>
-                    Elegir otro juego
-                  </button>
-                </div>
-
-                <div className="answer-review">
-                  {latestResult.answers.map((answer, index) => (
-                    <div key={`${latestResult.id}-${answer.prompt}-${index}`} className={answer.correct ? 'correct' : 'wrong'}>
-                      <span>{answer.prompt}</span>
-                      <strong>
-                        {answer.userAnswer} {answer.correct ? '✓' : `→ ${answer.expected}`}
-                      </strong>
-                    </div>
-                  ))}
-                </div>
-              </motion.section>
-            ) : null}
-          </AnimatePresence>
+          <p className="settings-summary">
+            Tu progreso y resultados se guardan con este nombre en este navegador.
+          </p>
+          {studentNameError && <p className="student-note">{studentNameError}</p>}
         </section>
 
-        <aside className="panel report-panel">
-          <div className="section-heading">
+        <section className="settings-card drawer-card">
+          <div className="settings-header">
             <div>
-              <p className="section-label">Seguimiento</p>
-              <h2>{studentName ? `Historial de ${studentName}` : 'Historial y reportes'}</h2>
+              <p className="section-label">Practica</p>
+              <h3>Priorizar tablas y duracion</h3>
             </div>
+
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={practiceSettings.prioritizeSelectedTables}
+                onChange={togglePriorityMode}
+              />
+              <span className="switch-track" aria-hidden="true">
+                <span className="switch-thumb" />
+              </span>
+              <span className="switch-label">
+                {practiceSettings.prioritizeSelectedTables ? 'Activado' : 'Desactivado'}
+              </span>
+            </label>
           </div>
 
-          {historyInsight ? (
-            <>
-              <div className="report-cards">
-                <article>
-                  <strong>{historyInsight.totalSessions}</strong>
-                  <span>sesiones jugadas</span>
-                </article>
-                <article>
-                  <strong>{historyInsight.averageAccuracy}%</strong>
-                  <span>precision promedio</span>
-                </article>
-                <article>
-                  <strong>{historyInsight.bestScore} aciertos</strong>
-                  <span>mejor puntaje</span>
-                </article>
-                <article>
-                  <strong>{historyInsight.favoriteGame}</strong>
-                  <span>juego favorito</span>
-                </article>
+          <p className="settings-description">
+            Ajusta las tablas que quieres reforzar y cuantos ejercicios unicos quieres por partida.
+          </p>
+
+          <div className="table-selector" role="group" aria-label="Seleccion de tablas prioritarias">
+            {TABLE_OPTIONS.map((table) => {
+              const isSelected = practiceSettings.prioritizedTables.includes(table)
+
+              return (
+                <button
+                  key={table}
+                  type="button"
+                  className={`table-chip ${isSelected ? 'selected' : ''}`}
+                  onClick={() => togglePriorityTable(table)}
+                  aria-pressed={isSelected}
+                >
+                  Tabla del {table}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="question-count-form">
+            <input
+              type="number"
+              min={1}
+              max={availableQuestionCount}
+              value={practiceSettings.questionCount}
+              onChange={(event) => updateQuestionCount(event.target.value)}
+              aria-label="Cantidad de ejercicios por juego"
+            />
+            <span className="question-count-pill">Disponibles: {availableQuestionCount}</span>
+          </div>
+
+          <p className="settings-summary">
+            {practiceSettings.prioritizeSelectedTables && practiceSettings.prioritizedTables.length > 0
+              ? `Prioridad activa en: ${practiceSettings.prioritizedTables.join(', ')}. `
+              : 'Sin prioridad activa. '}
+            {practiceSettings.questionCount > effectiveQuestionCount
+              ? `Se ajustara a ${effectiveQuestionCount} ejercicios unicos.`
+              : `Cada juego tendra ${effectiveQuestionCount} ejercicios unicos.`}
+          </p>
+        </section>
+      </aside>
+
+      {!isPlaying ? (
+        <>
+          <header className="hero-panel">
+            <div className="hero-copy">
+              <h1>Tablas divertidas para aprender jugando</h1>
+              <p className="hero-description">
+                Sesiones cortas, feedback positivo e historial de avances para reforzar las tablas
+                del 1 al 10.
+              </p>
+
+              <div className="hero-pills">
+                <span>Tablas del 1 al 10</span>
+                <span>{effectiveQuestionCount} ejercicios por partida</span>
+                <span>Historial con reportes</span>
+                <span>Configuracion rapida desde la esquina</span>
+              </div>
+            </div>
+
+            <div className="mascot-card">
+              <div className="mascot-face" aria-hidden="true">
+                <span>+</span>
+                <span>x</span>
+                <span>=</span>
+              </div>
+              <p className="mascot-title">Mision del dia</p>
+              <strong>Dominar las tablas con alegria y constancia.</strong>
+            </div>
+          </header>
+
+          <main className="content-grid">
+            <section className="panel game-panel">
+              <div className="section-heading">
+                <div>
+                  <p className="section-label">Juegos del modulo</p>
+                  <h2>Elige como quieres practicar</h2>
+                </div>
+                <span className="session-badge">Sesion de {effectiveQuestionCount} ejercicios</span>
               </div>
 
-              <div className="focus-box">
-                <h3>Tablas para reforzar</h3>
-                <p>
-                  {historyInsight.focusTables.length > 0
-                    ? historyInsight.focusTables.map((table) => `tabla del ${table}`).join(', ')
-                    : 'Por ahora no hay tablas con errores repetidos. Sigue asi.'}
-                </p>
-              </div>
-
-              <div className="history-list">
-                {studentHistory.map((sessionRecord) => (
-                  <article key={sessionRecord.id}>
-                    <div>
-                      <strong>{sessionRecord.gameName}</strong>
-                      <span>
-                        {new Intl.DateTimeFormat('es-CL', {
-                          dateStyle: 'short',
-                          timeStyle: 'short',
-                        }).format(new Date(sessionRecord.playedAt))}
-                      </span>
-                    </div>
-                    <div className="history-score">
-                      <strong>
-                        {sessionRecord.score}/{sessionRecord.total}
-                      </strong>
-                      <span>
-                        {sessionRecord.rating} · {formatDuration(sessionRecord.durationSeconds)}
-                      </span>
-                    </div>
-                  </article>
+              <div className="game-grid">
+                {Object.values(GAME_CONFIGS).map((game) => (
+                  <motion.article
+                    key={game.id}
+                    className="game-card"
+                    whileHover={{ y: -6 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                    style={{ '--card-accent': game.accent } as React.CSSProperties}
+                  >
+                    <span className="game-badge">{game.badge}</span>
+                    <h3>{game.title}</h3>
+                    <p>{game.description}</p>
+                    <small>{game.helperText}</small>
+                    <button type="button" onClick={() => startGame(game.id)}>
+                      {game.actionLabel}
+                    </button>
+                  </motion.article>
                 ))}
               </div>
-            </>
-          ) : (
-            <div className="empty-state">
-              <h3>Tu historial aparecera aqui</h3>
-              <p>
-                {studentName
-                  ? 'Juega la primera partida para comenzar a revisar avances, puntajes y tablas a reforzar.'
-                  : 'Primero guarda el nombre del estudiante para empezar a registrar su progreso.'}
-              </p>
+            </section>
+
+            <aside className="panel report-panel">
+              <div className="section-heading">
+                <div>
+                  <p className="section-label">Seguimiento</p>
+                  <h2>Historial de {studentName}</h2>
+                </div>
+              </div>
+
+              {historyInsight ? (
+                <>
+                  <div className="report-cards">
+                    <article>
+                      <strong>{historyInsight.totalSessions}</strong>
+                      <span>sesiones jugadas</span>
+                    </article>
+                    <article>
+                      <strong>{historyInsight.averageAccuracy}%</strong>
+                      <span>precision promedio</span>
+                    </article>
+                    <article>
+                      <strong>{historyInsight.bestScore} aciertos</strong>
+                      <span>mejor puntaje</span>
+                    </article>
+                    <article>
+                      <strong>{historyInsight.favoriteGame}</strong>
+                      <span>juego favorito</span>
+                    </article>
+                  </div>
+
+                  <div className="focus-box">
+                    <h3>Tablas para reforzar</h3>
+                    <p>
+                      {historyInsight.focusTables.length > 0
+                        ? historyInsight.focusTables.map((table) => `tabla del ${table}`).join(', ')
+                        : 'Por ahora no hay tablas con errores repetidos. Sigue asi.'}
+                    </p>
+                  </div>
+
+                  <div className="history-list">
+                    {studentHistory.map((sessionRecord) => (
+                      <article key={sessionRecord.id}>
+                        <div>
+                          <strong>{sessionRecord.gameName}</strong>
+                          <span>
+                            {new Intl.DateTimeFormat('es-CL', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            }).format(new Date(sessionRecord.playedAt))}
+                          </span>
+                        </div>
+                        <div className="history-score">
+                          <strong>
+                            {sessionRecord.score}/{sessionRecord.total}
+                          </strong>
+                          <span>
+                            {sessionRecord.rating} · {formatDuration(sessionRecord.durationSeconds)}
+                          </span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state">
+                  <h3>Tu historial aparecera aqui</h3>
+                  <p>Juega la primera partida para comenzar a revisar avances, puntajes y tablas a reforzar.</p>
+                </div>
+              )}
+            </aside>
+          </main>
+
+          <section className="panel future-panel">
+            <div className="section-heading">
+              <div>
+                <p className="section-label">Siguiente etapa</p>
+                <h2>Juegos planeados para mas adelante</h2>
+              </div>
             </div>
-          )}
-        </aside>
-      </main>
 
-      <section className="panel future-panel">
-        <div className="section-heading">
-          <div>
-            <p className="section-label">Siguiente etapa</p>
-            <h2>Juegos planeados para mas adelante</h2>
-          </div>
-        </div>
+            <div className="future-grid">
+              {FUTURE_GAMES.map((game) => (
+                <article key={game}>
+                  <span>Proximamente</span>
+                  <p>{game}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        <main className="play-screen">
+          <section className="panel game-panel game-focused-panel">
+            <AnimatePresence mode="wait">
+              {session && currentQuestion && currentGame ? (
+                <motion.section
+                  key={`${session.gameId}-${session.currentIndex}`}
+                  className="play-area"
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -14 }}
+                >
+                  <div className="play-header">
+                    <div>
+                      <p className="section-label">Jugando: {currentGame.title}</p>
+                      <h2 className="play-question">{currentQuestion.prompt}</h2>
+                    </div>
+                    <button type="button" className="ghost-button" onClick={resetToHome}>
+                      Volver
+                    </button>
+                  </div>
 
-        <div className="future-grid">
-          {FUTURE_GAMES.map((game) => (
-            <article key={game}>
-              <span>Proximamente</span>
-              <p>{game}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+                  <div className="progress-row">
+                    <div className="progress-track" aria-hidden="true">
+                      <span
+                        className="progress-fill"
+                        style={{
+                          width: `${((session.currentIndex + (feedback ? 1 : 0)) / session.questions.length) * 100}%`,
+                          background: currentGame.accent,
+                        }}
+                      />
+                    </div>
+                    <strong>
+                      Pregunta {session.currentIndex + 1} de {session.questions.length}
+                    </strong>
+                    <span className="timer-badge">Tiempo: {formatDuration(elapsedSeconds)}</span>
+                  </div>
+
+                  <p className="question-helper">
+                    {session.gameId === 'input' &&
+                      'Escribe el resultado y presiona responder para avanzar.'}
+                    {session.gameId === 'choice' &&
+                      'Toca una opcion correcta. Si fallas, aprenderas la respuesta al instante.'}
+                    {session.gameId === 'voice' &&
+                      'Di el resultado en voz alta usando numeros como "cuarenta y dos".'}
+                  </p>
+
+                  {session.gameId !== 'choice' && (
+                    <div className="answer-row">
+                      <input
+                        inputMode="numeric"
+                        value={inputValue}
+                        disabled={isTransitioning}
+                        onChange={(event) => setInputValue(event.target.value.replace(/[^\d]/g, ''))}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            submitAnswer(inputValue)
+                          }
+                        }}
+                        placeholder="Tu respuesta"
+                        aria-label="Ingresa tu respuesta"
+                      />
+                      <button type="button" onClick={() => submitAnswer(inputValue)} disabled={isTransitioning}>
+                        Responder
+                      </button>
+                      {session.gameId === 'voice' && (
+                        <button
+                          type="button"
+                          className={`voice-button ${isListening ? 'listening' : ''}`}
+                          onClick={startListening}
+                          disabled={!speechRecognitionSupported || isTransitioning}
+                        >
+                          {isListening ? 'Escuchando...' : 'Responder con voz'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {session.gameId === 'choice' && (
+                    <div className="choice-grid">
+                      {currentQuestion.choices.map((choice) => (
+                        <button
+                          key={`${currentQuestion.id}-${choice}`}
+                          type="button"
+                          className="choice-button"
+                          disabled={isTransitioning}
+                          onClick={() => submitAnswer(String(choice))}
+                        >
+                          {choice}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {session.gameId === 'voice' && (
+                    <p className="voice-message">
+                      {speechRecognitionSupported
+                        ? voiceMessage ?? 'Tambien puedes escribir si prefieres.'
+                        : 'Tu navegador no soporta voz. Puedes usar los otros juegos.'}
+                    </p>
+                  )}
+
+                  {feedback && (
+                    <div className={`feedback-card ${feedback.correct ? 'success' : 'error'}`}>
+                      {feedback.message}
+                    </div>
+                  )}
+                </motion.section>
+              ) : null}
+
+              {!session && latestResult ? (
+                <motion.section
+                  key={latestResult.id}
+                  className="result-panel"
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -14 }}
+                >
+                  <p className="section-label">Fin de la partida</p>
+                  <h2>{latestResult.rating}</h2>
+                  <p className="student-result-name">Estudiante: {latestResult.studentName}</p>
+                  <p className="hero-description">{latestResult.encouragement}</p>
+
+                  <div className="result-stats">
+                    <div>
+                      <strong>
+                        {latestResult.score}/{latestResult.total}
+                      </strong>
+                      <span>respuestas correctas</span>
+                    </div>
+                    <div>
+                      <strong>{latestResult.accuracy}%</strong>
+                      <span>precision</span>
+                    </div>
+                    <div>
+                      <strong>{formatDuration(latestResult.durationSeconds)}</strong>
+                      <span>tiempo total</span>
+                    </div>
+                  </div>
+
+                  <div className="result-actions">
+                    <button type="button" onClick={() => startGame(latestResult.gameId)}>
+                      Jugar de nuevo
+                    </button>
+                    <button type="button" className="ghost-button" onClick={resetToHome}>
+                      Volver al inicio
+                    </button>
+                  </div>
+
+                  <div className="answer-review">
+                    {latestResult.answers.map((answer, index) => (
+                      <div key={`${latestResult.id}-${answer.prompt}-${index}`} className={answer.correct ? 'correct' : 'wrong'}>
+                        <span>{answer.prompt}</span>
+                        <strong>
+                          {answer.userAnswer} {answer.correct ? '✓' : `→ ${answer.expected}`}
+                        </strong>
+                      </div>
+                    ))}
+                  </div>
+                </motion.section>
+              ) : null}
+            </AnimatePresence>
+          </section>
+        </main>
+      )}
     </div>
   )
 }
