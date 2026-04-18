@@ -89,6 +89,7 @@ type StickerDefinition = {
   background: string
   accent: string
   emoji?: string
+  imageSrc?: string
 }
 
 type EarnedSticker = StickerDefinition & {
@@ -162,6 +163,7 @@ const CHALLENGE_DURATION_MS = 10_000
 const MAX_TABLE = 10
 const MAX_QUESTION_COUNT = MAX_TABLE * MAX_TABLE
 const TABLE_OPTIONS = Array.from({ length: MAX_TABLE }, (_, index) => index + 1)
+const STICKER_BASE_PATH = `${import.meta.env.BASE_URL}stickers`
 
 const GAME_CONFIGS: Record<GameId, GameConfig> = {
   input: {
@@ -202,104 +204,104 @@ const FUTURE_GAMES = [
 
 const STICKER_LIBRARY: StickerDefinition[] = [
   {
-    id: 'table-1-sprout',
+    id: 'table-1-rabbit',
     rewardTable: 1,
     rarity: 'clasico',
-    name: 'Brote inicial',
-    description: 'Premio base para dominar las tablas iniciales.',
-    background: 'linear-gradient(135deg, #dcfce7, #86efac)',
-    accent: '#166534',
-    emoji: '🌱',
+    name: 'Conejito veloz',
+    description: 'Un premio amable para empezar a llenar el album.',
+    background: 'linear-gradient(135deg, #fee2e2, #fbcfe8)',
+    accent: '#9d174d',
+    imageSrc: `${STICKER_BASE_PATH}/table-1-rabbit.svg`,
   },
   {
-    id: 'table-2-flower',
+    id: 'table-2-squirrel',
     rewardTable: 2,
     rarity: 'clasico',
-    name: 'Flor veloz',
-    description: 'Un sticker suave para tablas faciles y consistentes.',
-    background: 'linear-gradient(135deg, #fce7f3, #f9a8d4)',
-    accent: '#9d174d',
-    emoji: '🌼',
+    name: 'Ardilla chispa',
+    description: 'Ideal para sesiones cortas con buena precision.',
+    background: 'linear-gradient(135deg, #ffedd5, #fdba74)',
+    accent: '#9a3412',
+    imageSrc: `${STICKER_BASE_PATH}/table-2-squirrel.svg`,
   },
   {
-    id: 'table-3-sun',
+    id: 'table-3-penguin',
     rewardTable: 3,
     rarity: 'clasico',
-    name: 'Sol brillante',
-    description: 'Recompensa alegre para una base solida.',
-    background: 'linear-gradient(135deg, #fde68a, #f59e0b)',
-    accent: '#78350f',
-    emoji: '☀️',
+    name: 'Pinguino feliz',
+    description: 'Marca una base solida en tablas tempranas.',
+    background: 'linear-gradient(135deg, #dbeafe, #93c5fd)',
+    accent: '#1d4ed8',
+    imageSrc: `${STICKER_BASE_PATH}/table-3-penguin.svg`,
   },
   {
-    id: 'table-4-compass',
+    id: 'table-4-bear',
     rewardTable: 4,
     rarity: 'aventura',
-    name: 'Brjula de aventura',
-    description: 'Empiezan los desafios con mas movimiento.',
-    background: 'linear-gradient(135deg, #fed7aa, #fb923c)',
-    accent: '#7c2d12',
-    emoji: '🧭',
+    name: 'Oso tranquilo',
+    description: 'El album empieza a ponerse mas interesante.',
+    background: 'linear-gradient(135deg, #fde68a, #f59e0b)',
+    accent: '#78350f',
+    imageSrc: `${STICKER_BASE_PATH}/table-4-bear.svg`,
   },
   {
-    id: 'table-5-dino',
+    id: 'table-5-fox',
     rewardTable: 5,
     rarity: 'aventura',
-    name: 'Dino explorador',
+    name: 'Zorro astuto',
     description: 'Premio para sesiones de dificultad media.',
-    background: 'linear-gradient(135deg, #f5d0fe, #c4b5fd)',
-    accent: '#6b21a8',
-    emoji: '🦕',
+    background: 'linear-gradient(135deg, #fed7aa, #fb923c)',
+    accent: '#7c2d12',
+    imageSrc: `${STICKER_BASE_PATH}/table-5-fox.svg`,
   },
   {
-    id: 'table-6-shield',
+    id: 'table-6-raccoon',
     rewardTable: 6,
     rarity: 'aventura',
-    name: 'Escudo experto',
+    name: 'Mapache guardian',
     description: 'Marca que ya vienes subiendo de nivel.',
-    background: 'linear-gradient(135deg, #dcfce7, #86efac)',
-    accent: '#166534',
-    emoji: '🛡️',
+    background: 'linear-gradient(135deg, #e9d5ff, #c4b5fd)',
+    accent: '#6d28d9',
+    imageSrc: `${STICKER_BASE_PATH}/table-6-raccoon.svg`,
   },
   {
-    id: 'premium-table-7-crown',
+    id: 'premium-table-7-elk',
     rewardTable: 7,
     rarity: 'premium',
-    name: 'Corona dorada',
+    name: 'Alce premium',
     description: 'Sticker premium para dominar tablas exigentes.',
-    background: 'linear-gradient(135deg, #fecaca, #f97316)',
+    background: 'linear-gradient(135deg, #fdba74, #fb7185)',
     accent: '#ffffff',
-    emoji: '👑',
+    imageSrc: `${STICKER_BASE_PATH}/table-7-elk.svg`,
   },
   {
-    id: 'premium-table-8-gem',
+    id: 'premium-table-8-lion',
     rewardTable: 8,
     rarity: 'premium',
-    name: 'Gema magnetica',
+    name: 'Leon campeon',
     description: 'Premio premium reservado a multiplicaciones complejas.',
-    background: 'linear-gradient(135deg, #bfdbfe, #60a5fa)',
-    accent: '#ffffff',
-    emoji: '💎',
+    background: 'linear-gradient(135deg, #fcd34d, #f59e0b)',
+    accent: '#78350f',
+    imageSrc: `${STICKER_BASE_PATH}/table-8-lion.svg`,
   },
   {
-    id: 'premium-table-9-bolt',
+    id: 'premium-table-9-whale',
     rewardTable: 9,
     rarity: 'legendario',
-    name: 'Rayo legendario',
+    name: 'Ballena legendaria',
     description: 'Un sticker elite para tablas muy dificiles.',
-    background: 'linear-gradient(135deg, #fdba74, #ef4444)',
+    background: 'linear-gradient(135deg, #93c5fd, #22d3ee)',
     accent: '#ffffff',
-    emoji: '⚡',
+    imageSrc: `${STICKER_BASE_PATH}/table-9-whale.svg`,
   },
   {
-    id: 'premium-table-10-comet',
+    id: 'premium-table-10-dinosaur',
     rewardTable: 10,
     rarity: 'legendario',
-    name: 'Cometa supremo',
+    name: 'Dino supremo',
     description: 'La recompensa mas premium del album.',
-    background: 'linear-gradient(135deg, #86efac, #14b8a6)',
+    background: 'linear-gradient(135deg, #6ee7b7, #34d399)',
     accent: '#ffffff',
-    emoji: '🌠',
+    imageSrc: `${STICKER_BASE_PATH}/table-10-dinosaur.svg`,
   },
 ]
 
@@ -1460,6 +1462,8 @@ function App() {
               Los stickers se desbloquean con 90% o mas de precision ponderada. Las tablas mas complejas entregan premios mas premium.
             </p>
 
+            <p className="settings-summary">Coleccion cargada desde la carpeta local <strong>svgs</strong>.</p>
+
             {earnedStickers.length > 0 ? (
               <div className="sticker-grid">
                 {earnedStickers.map((sticker) => (
@@ -1469,7 +1473,7 @@ function App() {
                       style={{ background: sticker.background, color: sticker.accent }}
                       aria-hidden="true"
                     >
-                      <span>{sticker.emoji}</span>
+                      {sticker.imageSrc ? <img src={sticker.imageSrc} alt="" loading="lazy" /> : <span>{sticker.emoji}</span>}
                     </div>
                     <div>
                       <div className="sticker-title-row">
@@ -1959,7 +1963,11 @@ function App() {
                         style={{ background: latestEarnedSticker.background, color: latestEarnedSticker.accent }}
                         aria-hidden="true"
                       >
-                        <span>{latestEarnedSticker.emoji}</span>
+                        {latestEarnedSticker.imageSrc ? (
+                          <img src={latestEarnedSticker.imageSrc} alt="" />
+                        ) : (
+                          <span>{latestEarnedSticker.emoji}</span>
+                        )}
                       </div>
                       <div>
                         <div className="sticker-title-row">

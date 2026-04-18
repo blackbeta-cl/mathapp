@@ -349,6 +349,12 @@
   flex-shrink: 0;
 }
 
+.sticker-badge img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
 .sticker-badge span {
   font-size: 2rem;
 }
