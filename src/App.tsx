@@ -36,6 +36,7 @@ type AnswerRecord = {
 
 type SessionState = {
   gameId: GameId
+  challengeMode: boolean
   startedAt: number
   questions: Question[]
   currentIndex: number
@@ -74,6 +75,25 @@ type PracticeSettings = {
   prioritizeSelectedTables: boolean
   prioritizedTables: number[]
   questionCount: number
+  challengeMode: boolean
+}
+
+type DrawerMode = 'settings' | 'collectibles' | null
+
+type StickerDefinition = {
+  id: string
+  gameId: GameId
+  name: string
+  emoji: string
+  background: string
+  accent: string
+}
+
+type EarnedSticker = StickerDefinition & {
+  sessionId: string
+  earnedAt: string
+  sessionName: string
+  accuracy: number
 }
 
 type SpeechRecognitionAlternativeLike = {
@@ -134,6 +154,7 @@ const STORAGE_KEY = 'mathapp-multiplication-history-v1'
 const SETTINGS_STORAGE_KEY = 'mathapp-multiplication-settings-v1'
 const STUDENT_NAME_STORAGE_KEY = 'mathapp-student-name-v1'
 const DEFAULT_QUESTION_COUNT = 6
+const CHALLENGE_DURATION_MS = 10_000
 const MAX_TABLE = 10
 const MAX_QUESTION_COUNT = MAX_TABLE * MAX_TABLE
 const TABLE_OPTIONS = Array.from({ length: MAX_TABLE }, (_, index) => index + 1)
@@ -174,6 +195,63 @@ const FUTURE_GAMES = [
   'Bingo de tablas: completar cartones con productos correctos.',
   'Jefe final por tabla: dominar una tabla completa antes de desbloquear la siguiente.',
 ]
+
+const STICKER_LIBRARY: Record<GameId, StickerDefinition[]> = {
+  input: [
+    {
+      id: 'rocket-star',
+      gameId: 'input',
+      name: 'Cohete estelar',
+      emoji: '🚀',
+      background: 'linear-gradient(135deg, #7c3aed, #ec4899)',
+      accent: '#ffffff',
+    },
+    {
+      id: 'planet-master',
+      gameId: 'input',
+      name: 'Planeta experto',
+      emoji: '🪐',
+      background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)',
+      accent: '#ffffff',
+    },
+  ],
+  choice: [
+    {
+      id: 'jungle-crown',
+      gameId: 'choice',
+      name: 'Corona de selva',
+      emoji: '🦁',
+      background: 'linear-gradient(135deg, #f97316, #fb7185)',
+      accent: '#ffffff',
+    },
+    {
+      id: 'banana-champ',
+      gameId: 'choice',
+      name: 'Banana campeona',
+      emoji: '🍌',
+      background: 'linear-gradient(135deg, #f59e0b, #f97316)',
+      accent: '#ffffff',
+    },
+  ],
+  voice: [
+    {
+      id: 'echo-mic',
+      gameId: 'voice',
+      name: 'Microfono magico',
+      emoji: '🎤',
+      background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+      accent: '#ffffff',
+    },
+    {
+      id: 'sound-wave',
+      gameId: 'voice',
+      name: 'Ola sonora',
+      emoji: '🔊',
+      background: 'linear-gradient(135deg, #0284c7, #22d3ee)',
+      accent: '#ffffff',
+    },
+  ],
+}
 
 function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min
@@ -254,6 +332,7 @@ function createSession(gameId: GameId, settings: PracticeSettings): SessionState
 
   return {
     gameId,
+    challengeMode: settings.challengeMode,
     startedAt: Date.now(),
     currentIndex: 0,
     answers: [],
@@ -297,6 +376,10 @@ function formatDuration(durationSeconds: number) {
   const minutes = Math.floor(durationSeconds / 60)
   const seconds = durationSeconds % 60
   return `${minutes}m ${seconds}s`
+}
+
+function getTimestamp() {
+  return new Date().getTime()
 }
 
 function loadHistory() {
@@ -369,6 +452,31 @@ function getStudentKey(name: string) {
   return normalizeStudentName(name).toLowerCase()
 }
 
+function getEarnedStickers(history: SessionRecord[]) {
+  const counters: Record<GameId, number> = {
+    input: 0,
+    choice: 0,
+    voice: 0,
+  }
+
+  return history
+    .filter((session) => session.accuracy >= 90)
+    .map((session) => {
+      const stickers = STICKER_LIBRARY[session.gameId]
+      const sticker = stickers[counters[session.gameId] % stickers.length]
+
+      counters[session.gameId] += 1
+
+      return {
+        ...sticker,
+        sessionId: session.id,
+        earnedAt: session.playedAt,
+        sessionName: session.gameName,
+        accuracy: session.accuracy,
+      } satisfies EarnedSticker
+    })
+}
+
 function getFullscreenElement() {
   return document.fullscreenElement ?? document.webkitFullscreenElement ?? null
 }
@@ -390,6 +498,7 @@ function loadPracticeSettings(): PracticeSettings {
       prioritizeSelectedTables: false,
       prioritizedTables: [],
       questionCount: DEFAULT_QUESTION_COUNT,
+      challengeMode: false,
     }
   }
 
@@ -409,12 +518,14 @@ function loadPracticeSettings(): PracticeSettings {
         typeof parsed.questionCount === 'number'
           ? normalizeQuestionCount(parsed.questionCount)
           : DEFAULT_QUESTION_COUNT,
+      challengeMode: Boolean(parsed.challengeMode),
     }
   } catch {
     return {
       prioritizeSelectedTables: false,
       prioritizedTables: [],
       questionCount: DEFAULT_QUESTION_COUNT,
+      challengeMode: false,
     }
   }
 }
@@ -630,7 +741,7 @@ function App() {
   const [studentName, setStudentName] = useState(() => loadStudentName())
   const [studentNameInput, setStudentNameInput] = useState(() => loadStudentName())
   const [isEditingStudentName, setIsEditingStudentName] = useState(() => loadStudentName() === '')
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [activeDrawer, setActiveDrawer] = useState<DrawerMode>(null)
   const [session, setSession] = useState<SessionState | null>(null)
   const [latestResult, setLatestResult] = useState<SessionRecord | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(Boolean(getFullscreenElement()))
@@ -642,6 +753,8 @@ function App() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [voiceMessage, setVoiceMessage] = useState<string | null>(null)
+  const [countdownNow, setCountdownNow] = useState(0)
+  const [questionDeadline, setQuestionDeadline] = useState<number | null>(null)
   const sounds = useSoundEffects()
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null)
   const nextQuestionTimeoutRef = useRef<number | null>(null)
@@ -652,6 +765,7 @@ function App() {
     [history, studentKey],
   )
   const historyInsight = useMemo(() => getHistoryInsight(studentHistory), [studentHistory])
+  const earnedStickers = useMemo(() => getEarnedStickers(studentHistory), [studentHistory])
   const availableQuestionCount = useMemo(() => createQuestionPool(practiceSettings).length, [practiceSettings])
   const effectiveQuestionCount = useMemo(
     () => getEffectiveQuestionCount(practiceSettings),
@@ -664,6 +778,16 @@ function App() {
   const fullscreenSupported = isFullscreenAvailable()
   const sessionStartedAt = session?.startedAt ?? null
   const elapsedSeconds = session ? timerTick : 0
+  const challengeTimeLeftMs =
+    session?.challengeMode && questionDeadline ? Math.max(0, questionDeadline - countdownNow) : null
+  const challengeSecondsLeft =
+    challengeTimeLeftMs === null ? null : Math.max(0, Math.ceil(challengeTimeLeftMs / 1000))
+  const challengeUrgency =
+    challengeTimeLeftMs === null ? 0 : 1 - challengeTimeLeftMs / CHALLENGE_DURATION_MS
+  const latestEarnedSticker =
+    latestResult && latestResult.accuracy >= 90
+      ? earnedStickers.find((sticker) => sticker.sessionId === latestResult.id) ?? null
+      : null
 
   useEffect(() => {
     saveHistory(history)
@@ -722,6 +846,20 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (!session?.challengeMode || !currentQuestion || isTransitioning || !questionDeadline) {
+      return
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCountdownNow(getTimestamp())
+    }, 100)
+
+    return () => {
+      window.clearInterval(intervalId)
+    }
+  }, [currentQuestion, isTransitioning, questionDeadline, session?.challengeMode, session?.currentIndex])
+
+  useEffect(() => {
     if (!latestResult) {
       return
     }
@@ -736,9 +874,9 @@ function App() {
     }
   }, [latestResult, sounds])
 
-  const finishSession = (finishedSession: SessionState, answers: AnswerRecord[]) => {
+  const finishSession = useCallback((finishedSession: SessionState, answers: AnswerRecord[]) => {
     const score = answers.filter((answer) => answer.correct).length
-    const durationSeconds = Math.max(1, Math.round((Date.now() - finishedSession.startedAt) / 1000))
+    const durationSeconds = Math.max(1, Math.round((getTimestamp() - finishedSession.startedAt) / 1000))
     const rating = getRating(score, finishedSession.questions.length)
     const record: SessionRecord = {
       id: crypto.randomUUID(),
@@ -768,9 +906,11 @@ function App() {
     setIsListening(false)
     setTimerTick(0)
     setVoiceMessage(null)
-  }
+    setQuestionDeadline(null)
+    setCountdownNow(0)
+  }, [studentName])
 
-  const queueNextStep = (updatedSession: SessionState, answers: AnswerRecord[], delay = 900) => {
+  const queueNextStep = useCallback((updatedSession: SessionState, answers: AnswerRecord[], delay = 900) => {
     setIsTransitioning(true)
 
     nextQuestionTimeoutRef.current = window.setTimeout(() => {
@@ -786,22 +926,34 @@ function App() {
         currentIndex: nextIndex,
         answers,
       })
+      const nextTimestamp = getTimestamp()
       setInputValue('')
       setFeedback(null)
       setIsTransitioning(false)
       setIsListening(false)
       setVoiceMessage(null)
+      setQuestionDeadline(updatedSession.challengeMode ? nextTimestamp + CHALLENGE_DURATION_MS : null)
+      setCountdownNow(nextTimestamp)
     }, delay)
-  }
+  }, [finishSession])
 
-  const submitAnswer = (userAnswer: string) => {
+  const submitAnswer = useCallback((
+    userAnswer: string,
+    options?: {
+      allowBlank?: boolean
+      delay?: number
+      userAnswerLabel?: string
+      feedbackMessage?: string
+      voiceMessageOverride?: string
+    },
+  ) => {
     if (!session || !currentQuestion || isTransitioning) {
       return
     }
 
     const trimmedAnswer = userAnswer.trim()
 
-    if (!trimmedAnswer) {
+    if (!trimmedAnswer && !options?.allowBlank) {
       return
     }
 
@@ -812,7 +964,7 @@ function App() {
       factorA: currentQuestion.factorA,
       factorB: currentQuestion.factorB,
       expected: currentQuestion.answer,
-      userAnswer: trimmedAnswer,
+      userAnswer: options?.userAnswerLabel ?? trimmedAnswer,
       correct,
       gameId: session.gameId,
     }
@@ -821,16 +973,19 @@ function App() {
 
     setFeedback({
       correct,
-      message: correct
-        ? 'Muy bien. La siguiente viene en camino.'
-        : `Casi. La respuesta correcta era ${currentQuestion.answer}.`,
+      message:
+        options?.feedbackMessage ??
+        (correct
+          ? 'Muy bien. La siguiente viene en camino.'
+          : `Casi. La respuesta correcta era ${currentQuestion.answer}.`),
     })
 
     if (session.gameId === 'voice') {
       setVoiceMessage(
-        correct
-          ? `Muy bien. Dijiste ${trimmedAnswer} y era correcto.`
-          : `Escuche ${trimmedAnswer}, pero la respuesta correcta es ${currentQuestion.answer}.`,
+        options?.voiceMessageOverride ??
+          (correct
+            ? `Muy bien. Dijiste ${trimmedAnswer} y era correcto.`
+            : `Escuche ${trimmedAnswer || 'silencio'}, pero la respuesta correcta es ${currentQuestion.answer}.`),
       )
     }
 
@@ -840,8 +995,32 @@ function App() {
       sounds.playWrong()
     }
 
-    queueNextStep(session, answers, session.gameId === 'voice' && !correct ? 1800 : 900)
-  }
+    queueNextStep(
+      session,
+      answers,
+      options?.delay ?? (session.gameId === 'voice' && !correct ? 1800 : 900),
+    )
+  }, [currentQuestion, isTransitioning, queueNextStep, session, sounds])
+
+  useEffect(() => {
+    if (!session?.challengeMode || !currentQuestion || isTransitioning || challengeTimeLeftMs !== 0) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      submitAnswer('', {
+        allowBlank: true,
+        delay: 1800,
+        userAnswerLabel: 'Tiempo agotado',
+        feedbackMessage: `Se acabo el tiempo. La respuesta correcta era ${currentQuestion.answer}.`,
+        voiceMessageOverride: `Tiempo agotado. La respuesta correcta para ${currentQuestion.prompt} era ${currentQuestion.answer}.`,
+      })
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [challengeTimeLeftMs, currentQuestion, isTransitioning, session?.challengeMode, submitAnswer])
 
   const startGame = (gameId: GameId) => {
     if (!studentName) {
@@ -852,13 +1031,16 @@ function App() {
     recognitionRef.current?.stop()
     sounds.playTap()
     setLatestResult(null)
-    setIsSettingsOpen(false)
+    setActiveDrawer(null)
     setFeedback(null)
     setInputValue('')
     setIsTransitioning(false)
     setIsListening(false)
     setTimerTick(0)
     setVoiceMessage(null)
+    const nextTimestamp = getTimestamp()
+    setQuestionDeadline(practiceSettings.challengeMode ? nextTimestamp + CHALLENGE_DURATION_MS : null)
+    setCountdownNow(nextTimestamp)
     setStudentNameError(null)
     setSession(createSession(gameId, practiceSettings))
   }
@@ -875,7 +1057,7 @@ function App() {
     setStudentName(normalizedName)
     setStudentNameInput(normalizedName)
     setIsEditingStudentName(false)
-    setIsSettingsOpen(false)
+    setActiveDrawer(null)
     setStudentNameError(null)
     setLatestResult(null)
   }
@@ -884,17 +1066,22 @@ function App() {
     sounds.playTap()
     setStudentNameInput(studentName)
     setIsEditingStudentName(true)
-    setIsSettingsOpen(true)
+    setActiveDrawer('settings')
     setStudentNameError(null)
   }
 
   const openSettings = () => {
     sounds.playTap()
-    setIsSettingsOpen(true)
+    setActiveDrawer('settings')
   }
 
-  const closeSettings = () => {
-    setIsSettingsOpen(false)
+  const openCollectibles = () => {
+    sounds.playTap()
+    setActiveDrawer('collectibles')
+  }
+
+  const closeDrawer = () => {
+    setActiveDrawer(null)
   }
 
   const togglePriorityMode = () => {
@@ -927,6 +1114,14 @@ function App() {
       questionCount: Number.isFinite(numericValue)
         ? normalizeQuestionCount(numericValue)
         : DEFAULT_QUESTION_COUNT,
+    }))
+  }
+
+  const toggleChallengeMode = () => {
+    sounds.playTap()
+    setPracticeSettings((currentSettings) => ({
+      ...currentSettings,
+      challengeMode: !currentSettings.challengeMode,
     }))
   }
 
@@ -980,13 +1175,15 @@ function App() {
     recognitionRef.current?.stop()
     setSession(null)
     setLatestResult(null)
-    setIsSettingsOpen(false)
+    setActiveDrawer(null)
     setFeedback(null)
     setInputValue('')
     setIsTransitioning(false)
     setIsListening(false)
     setTimerTick(0)
     setVoiceMessage(null)
+    setQuestionDeadline(null)
+    setCountdownNow(0)
   }
 
   const toggleFullscreen = async () => {
@@ -1085,6 +1282,20 @@ function App() {
           <button
             type="button"
             className="icon-button settings-toggle"
+            onClick={openCollectibles}
+            aria-label="Abrir coleccionables"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="m12 2 2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 15.8 6.7 18l1-5.8-4.2-4.1 5.9-.9L12 2Z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            className="icon-button settings-toggle"
             onClick={openSettings}
             aria-label="Abrir configuracion"
           >
@@ -1108,128 +1319,201 @@ function App() {
 
       {fullscreenError && <p className="fullscreen-note">{fullscreenError}</p>}
 
-      {isSettingsOpen && <button type="button" className="drawer-backdrop" aria-label="Cerrar configuracion" onClick={closeSettings} />}
+      {activeDrawer && (
+        <button type="button" className="drawer-backdrop" aria-label="Cerrar panel lateral" onClick={closeDrawer} />
+      )}
 
-      <aside className={`settings-drawer ${isSettingsOpen ? 'open' : ''}`} aria-hidden={!isSettingsOpen}>
+      <aside className={`settings-drawer ${activeDrawer ? 'open' : ''}`} aria-hidden={!activeDrawer}>
         <div className="settings-drawer-header">
           <div>
-            <p className="section-label">Configuracion</p>
-            <h2>Ajustes de la partida</h2>
+            <p className="section-label">{activeDrawer === 'collectibles' ? 'Coleccionables' : 'Configuracion'}</p>
+            <h2>{activeDrawer === 'collectibles' ? 'Premios del estudiante' : 'Ajustes de la partida'}</h2>
           </div>
-          <button type="button" className="ghost-button" onClick={closeSettings}>
+          <button type="button" className="ghost-button" onClick={closeDrawer}>
             Cerrar
           </button>
         </div>
 
-        <section className="settings-card drawer-card">
-          <div className="settings-header">
-            <div>
-              <p className="section-label">Estudiante</p>
-              <h3>Perfil activo</h3>
-            </div>
-          </div>
-
-          {isEditingStudentName ? (
-            <div className="student-form">
-              <input
-                type="text"
-                value={studentNameInput}
-                onChange={(event) => setStudentNameInput(event.target.value)}
-                placeholder="Ejemplo: Mateo"
-                aria-label="Nombre del estudiante"
-              />
-              <button type="button" onClick={saveStudentName}>
-                Guardar nombre
-              </button>
-            </div>
-          ) : (
-            <div className="student-card">
+        {activeDrawer === 'collectibles' ? (
+          <section className="settings-card drawer-card">
+            <div className="settings-header">
               <div>
-                <p className="section-label">Perfil activo</p>
-                <strong>{studentName}</strong>
+                <p className="section-label">Album</p>
+                <h3>Stickers ganados</h3>
               </div>
-              <button type="button" className="edit-student-button" onClick={editStudentName} aria-label="Editar nombre del estudiante">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M4 20h4l10-10-4-4L4 16v4Zm13.7-11.3 1.6-1.6a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0L15 6l2.7 2.7Z"
-                    fill="currentColor"
+              <span className="question-count-pill">{earnedStickers.length} stickers</span>
+            </div>
+
+            <p className="settings-description">
+              Consigue un sticker cada vez que logres 90% o mas en una partida.
+            </p>
+
+            {earnedStickers.length > 0 ? (
+              <div className="sticker-grid">
+                {earnedStickers.map((sticker) => (
+                  <article key={sticker.sessionId} className="sticker-card">
+                    <div
+                      className="sticker-badge"
+                      style={{ background: sticker.background, color: sticker.accent }}
+                      aria-hidden="true"
+                    >
+                      <span>{sticker.emoji}</span>
+                    </div>
+                    <div>
+                      <strong>{sticker.name}</strong>
+                      <p>
+                        {sticker.sessionName} · {sticker.accuracy}% de precision
+                      </p>
+                      <small>
+                        {new Intl.DateTimeFormat('es-CL', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        }).format(new Date(sticker.earnedAt))}
+                      </small>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <h3>Tu album aun esta vacio</h3>
+                <p>Juega, supera el 90% y empezaras a llenar tu coleccion de premios.</p>
+              </div>
+            )}
+          </section>
+        ) : (
+          <>
+            <section className="settings-card drawer-card">
+              <div className="settings-header">
+                <div>
+                  <p className="section-label">Estudiante</p>
+                  <h3>Perfil activo</h3>
+                </div>
+              </div>
+
+              {isEditingStudentName ? (
+                <div className="student-form">
+                  <input
+                    type="text"
+                    value={studentNameInput}
+                    onChange={(event) => setStudentNameInput(event.target.value)}
+                    placeholder="Ejemplo: Mateo"
+                    aria-label="Nombre del estudiante"
                   />
-                </svg>
-              </button>
-            </div>
-          )}
+                  <button type="button" onClick={saveStudentName}>
+                    Guardar nombre
+                  </button>
+                </div>
+              ) : (
+                <div className="student-card">
+                  <div>
+                    <p className="section-label">Perfil activo</p>
+                    <strong>{studentName}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="edit-student-button"
+                    onClick={editStudentName}
+                    aria-label="Editar nombre del estudiante"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path
+                        d="M4 20h4l10-10-4-4L4 16v4Zm13.7-11.3 1.6-1.6a1 1 0 0 0 0-1.4l-1.3-1.3a1 1 0 0 0-1.4 0L15 6l2.7 2.7Z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
 
-          <p className="settings-summary">
-            Tu progreso y resultados se guardan con este nombre en este navegador.
-          </p>
-          {studentNameError && <p className="student-note">{studentNameError}</p>}
-        </section>
+              <p className="settings-summary">
+                Tu progreso y resultados se guardan con este nombre en este navegador.
+              </p>
+              {studentNameError && <p className="student-note">{studentNameError}</p>}
+            </section>
 
-        <section className="settings-card drawer-card">
-          <div className="settings-header">
-            <div>
-              <p className="section-label">Practica</p>
-              <h3>Priorizar tablas y duracion</h3>
-            </div>
+            <section className="settings-card drawer-card">
+              <div className="settings-header">
+                <div>
+                  <p className="section-label">Practica</p>
+                  <h3>Priorizar tablas y duracion</h3>
+                </div>
 
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={practiceSettings.prioritizeSelectedTables}
-                onChange={togglePriorityMode}
-              />
-              <span className="switch-track" aria-hidden="true">
-                <span className="switch-thumb" />
-              </span>
-              <span className="switch-label">
-                {practiceSettings.prioritizeSelectedTables ? 'Activado' : 'Desactivado'}
-              </span>
-            </label>
-          </div>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={practiceSettings.prioritizeSelectedTables}
+                    onChange={togglePriorityMode}
+                  />
+                  <span className="switch-track" aria-hidden="true">
+                    <span className="switch-thumb" />
+                  </span>
+                  <span className="switch-label">
+                    {practiceSettings.prioritizeSelectedTables ? 'Activado' : 'Desactivado'}
+                  </span>
+                </label>
+              </div>
 
-          <p className="settings-description">
-            Ajusta las tablas que quieres reforzar y cuantos ejercicios unicos quieres por partida.
-          </p>
+              <p className="settings-description">
+                Ajusta las tablas que quieres reforzar, cuantos ejercicios unicos quieres por partida y si quieres activar el reto contrarreloj.
+              </p>
 
-          <div className="table-selector" role="group" aria-label="Seleccion de tablas prioritarias">
-            {TABLE_OPTIONS.map((table) => {
-              const isSelected = practiceSettings.prioritizedTables.includes(table)
+              <div className="table-selector" role="group" aria-label="Seleccion de tablas prioritarias">
+                {TABLE_OPTIONS.map((table) => {
+                  const isSelected = practiceSettings.prioritizedTables.includes(table)
 
-              return (
-                <button
-                  key={table}
-                  type="button"
-                  className={`table-chip ${isSelected ? 'selected' : ''}`}
-                  onClick={() => togglePriorityTable(table)}
-                  aria-pressed={isSelected}
-                >
-                  Tabla del {table}
-                </button>
-              )
-            })}
-          </div>
+                  return (
+                    <button
+                      key={table}
+                      type="button"
+                      className={`table-chip ${isSelected ? 'selected' : ''}`}
+                      onClick={() => togglePriorityTable(table)}
+                      aria-pressed={isSelected}
+                    >
+                      Tabla del {table}
+                    </button>
+                  )
+                })}
+              </div>
 
-          <div className="question-count-form">
-            <input
-              type="number"
-              min={1}
-              max={availableQuestionCount}
-              value={practiceSettings.questionCount}
-              onChange={(event) => updateQuestionCount(event.target.value)}
-              aria-label="Cantidad de ejercicios por juego"
-            />
-            <span className="question-count-pill">Disponibles: {availableQuestionCount}</span>
-          </div>
+              <div className="question-count-form">
+                <input
+                  type="number"
+                  min={1}
+                  max={availableQuestionCount}
+                  value={practiceSettings.questionCount}
+                  onChange={(event) => updateQuestionCount(event.target.value)}
+                  aria-label="Cantidad de ejercicios por juego"
+                />
+                <span className="question-count-pill">Disponibles: {availableQuestionCount}</span>
+              </div>
 
-          <p className="settings-summary">
-            {practiceSettings.prioritizeSelectedTables && practiceSettings.prioritizedTables.length > 0
-              ? `Prioridad activa en: ${practiceSettings.prioritizedTables.join(', ')}. `
-              : 'Sin prioridad activa. '}
-            {practiceSettings.questionCount > effectiveQuestionCount
-              ? `Se ajustara a ${effectiveQuestionCount} ejercicios unicos.`
-              : `Cada juego tendra ${effectiveQuestionCount} ejercicios unicos.`}
-          </p>
-        </section>
+              <label className="challenge-toggle">
+                <input
+                  type="checkbox"
+                  checked={practiceSettings.challengeMode}
+                  onChange={toggleChallengeMode}
+                />
+                <span>
+                  <strong>Modo desafio</strong>
+                  <small>10 segundos por pregunta con cuenta regresiva y alerta roja.</small>
+                </span>
+              </label>
+
+              <p className="settings-summary">
+                {practiceSettings.prioritizeSelectedTables && practiceSettings.prioritizedTables.length > 0
+                  ? `Prioridad activa en: ${practiceSettings.prioritizedTables.join(', ')}. `
+                  : 'Sin prioridad activa. '}
+                {practiceSettings.questionCount > effectiveQuestionCount
+                  ? `Se ajustara a ${effectiveQuestionCount} ejercicios unicos. `
+                  : `Cada juego tendra ${effectiveQuestionCount} ejercicios unicos. `}
+                {practiceSettings.challengeMode
+                  ? 'El modo desafio esta activo con 10 segundos por pregunta.'
+                  : 'El modo desafio esta desactivado.'}
+              </p>
+            </section>
+          </>
+        )}
       </aside>
 
       {!isPlaying ? (
@@ -1246,6 +1530,7 @@ function App() {
                 <span>Tablas del 1 al 10</span>
                 <span>{effectiveQuestionCount} ejercicios por partida</span>
                 <span>Historial con reportes</span>
+                <span>{practiceSettings.challengeMode ? 'Modo desafio activo' : 'Modo desafio opcional'}</span>
                 <span>Configuracion rapida desde la esquina</span>
               </div>
             </div>
@@ -1383,6 +1668,14 @@ function App() {
         </>
       ) : (
         <main className="play-screen">
+          {session?.challengeMode && (
+            <div
+              className="challenge-overlay"
+              style={{ '--challenge-urgency': challengeUrgency } as React.CSSProperties}
+              aria-hidden="true"
+            />
+          )}
+
           <section className="panel game-panel game-focused-panel">
             <AnimatePresence mode="wait">
               {session && currentQuestion && currentGame ? (
@@ -1417,6 +1710,11 @@ function App() {
                       Pregunta {session.currentIndex + 1} de {session.questions.length}
                     </strong>
                     <span className="timer-badge">Tiempo: {formatDuration(elapsedSeconds)}</span>
+                    {session.challengeMode && challengeSecondsLeft !== null && (
+                      <span className={`timer-badge challenge-timer ${challengeSecondsLeft <= 3 ? 'urgent' : ''}`}>
+                        Desafio: {challengeSecondsLeft}s
+                      </span>
+                    )}
                   </div>
 
                   <p className="question-helper">
@@ -1427,6 +1725,12 @@ function App() {
                     {session.gameId === 'voice' &&
                       'Di el resultado en voz alta usando numeros como "cuarenta y dos".'}
                   </p>
+
+                  {session.challengeMode && (
+                    <p className="challenge-helper">
+                      Cada pregunta dura 10 segundos. Si el reloj llega a cero, cuenta como incorrecta.
+                    </p>
+                  )}
 
                   {session.gameId !== 'choice' && (
                     <div className="answer-row">
@@ -1529,6 +1833,22 @@ function App() {
                       Volver al inicio
                     </button>
                   </div>
+
+                  {latestEarnedSticker && (
+                    <div className="reward-banner">
+                      <div
+                        className="sticker-badge"
+                        style={{ background: latestEarnedSticker.background, color: latestEarnedSticker.accent }}
+                        aria-hidden="true"
+                      >
+                        <span>{latestEarnedSticker.emoji}</span>
+                      </div>
+                      <div>
+                        <strong>Nuevo sticker desbloqueado: {latestEarnedSticker.name}</strong>
+                        <p>Ganado por superar el 90% en esta partida.</p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="answer-review">
                     {latestResult.answers.map((answer, index) => (
