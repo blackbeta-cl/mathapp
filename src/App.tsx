@@ -214,6 +214,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-1-rabbit.svg`,
   },
   {
+    id: 'table-1-twemoji-rabbit',
+    rewardTable: 1,
+    rarity: 'clasico',
+    name: 'Conejito Twemoji',
+    description: 'Una variante adorable extra para tablas muy iniciales.',
+    background: 'linear-gradient(135deg, #fbcfe8, #f9a8d4)',
+    accent: '#9d174d',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-rabbit.svg`,
+  },
+  {
     id: 'table-2-squirrel',
     rewardTable: 2,
     rarity: 'clasico',
@@ -232,6 +242,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     background: 'linear-gradient(135deg, #dcfce7, #86efac)',
     accent: '#166534',
     imageSrc: `${STICKER_BASE_PATH}/table-2-turtle.svg`,
+  },
+  {
+    id: 'table-2-twemoji-cat',
+    rewardTable: 2,
+    rarity: 'clasico',
+    name: 'Gatito Twemoji',
+    description: 'Mas variedad tierna para reforzar tablas faciles.',
+    background: 'linear-gradient(135deg, #dbeafe, #c4b5fd)',
+    accent: '#4338ca',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-cat.svg`,
   },
   {
     id: 'table-3-penguin',
@@ -254,6 +274,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-3-hedgehog.svg`,
   },
   {
+    id: 'table-3-twemoji-dog',
+    rewardTable: 3,
+    rarity: 'clasico',
+    name: 'Perrito Twemoji',
+    description: 'Premio extra para sesiones cortas bien resueltas.',
+    background: 'linear-gradient(135deg, #fde68a, #fdba74)',
+    accent: '#92400e',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-dog.svg`,
+  },
+  {
     id: 'table-4-bear',
     rewardTable: 4,
     rarity: 'aventura',
@@ -262,6 +292,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     background: 'linear-gradient(135deg, #fde68a, #f59e0b)',
     accent: '#78350f',
     imageSrc: `${STICKER_BASE_PATH}/table-4-bear.svg`,
+  },
+  {
+    id: 'table-4-twemoji-koala',
+    rewardTable: 4,
+    rarity: 'aventura',
+    name: 'Koala Twemoji',
+    description: 'Nueva recompensa para el salto a tablas mas entretenidas.',
+    background: 'linear-gradient(135deg, #e5e7eb, #cbd5e1)',
+    accent: '#334155',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-koala.svg`,
   },
   {
     id: 'table-5-fox',
@@ -294,6 +334,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-5-wild-boar.svg`,
   },
   {
+    id: 'table-5-twemoji-monkey',
+    rewardTable: 5,
+    rarity: 'aventura',
+    name: 'Monito Twemoji',
+    description: 'Suma variedad a las recompensas del tramo medio.',
+    background: 'linear-gradient(135deg, #bfdbfe, #93c5fd)',
+    accent: '#1d4ed8',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-monkey.svg`,
+  },
+  {
     id: 'table-6-raccoon',
     rewardTable: 6,
     rarity: 'aventura',
@@ -324,6 +374,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-6-shrimp.svg`,
   },
   {
+    id: 'table-6-twemoji-penguin',
+    rewardTable: 6,
+    rarity: 'aventura',
+    name: 'Pinguino Twemoji',
+    description: 'Una variante adicional para sesiones medias con gran ritmo.',
+    background: 'linear-gradient(135deg, #bfdbfe, #67e8f9)',
+    accent: '#0f172a',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-penguin.svg`,
+  },
+  {
     id: 'premium-table-7-elk',
     rewardTable: 7,
     rarity: 'premium',
@@ -344,6 +404,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-7-polar-bear.svg`,
   },
   {
+    id: 'premium-table-7-twemoji-fox',
+    rewardTable: 7,
+    rarity: 'premium',
+    name: 'Zorro Twemoji',
+    description: 'Premio premium extra para tablas que ya exigen mas concentracion.',
+    background: 'linear-gradient(135deg, #fdba74, #fb7185)',
+    accent: '#ffffff',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-fox.svg`,
+  },
+  {
     id: 'premium-table-8-lion',
     rewardTable: 8,
     rarity: 'premium',
@@ -352,6 +422,26 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     background: 'linear-gradient(135deg, #fcd34d, #f59e0b)',
     accent: '#78350f',
     imageSrc: `${STICKER_BASE_PATH}/table-8-lion.svg`,
+  },
+  {
+    id: 'premium-table-8-twemoji-bear',
+    rewardTable: 8,
+    rarity: 'premium',
+    name: 'Osito Twemoji',
+    description: 'Otra recompensa premium para sesiones con tablas complejas.',
+    background: 'linear-gradient(135deg, #fecdd3, #fca5a5)',
+    accent: '#7f1d1d',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-bear.svg`,
+  },
+  {
+    id: 'premium-table-8-twemoji-lion',
+    rewardTable: 8,
+    rarity: 'premium',
+    name: 'Leon Twemoji',
+    description: 'Variante premium adicional para cuando la tabla dominante ya es dura.',
+    background: 'linear-gradient(135deg, #fde68a, #f59e0b)',
+    accent: '#78350f',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-lion.svg`,
   },
   {
     id: 'premium-table-9-whale',
@@ -374,11 +464,31 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-9-crocodile.svg`,
   },
   {
+    id: 'legendary-table-9-twemoji-tiger',
+    rewardTable: 9,
+    rarity: 'legendario',
+    name: 'Tigre Twemoji',
+    description: 'Legendario extra para una de las tablas mas desafiantes.',
+    background: 'linear-gradient(135deg, #fdba74, #f97316)',
+    accent: '#ffffff',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-tiger.svg`,
+  },
+  {
+    id: 'legendary-table-9-twemoji-panda',
+    rewardTable: 9,
+    rarity: 'legendario',
+    name: 'Panda Twemoji',
+    description: 'Otra variante legendaria para las sesiones mas exigentes.',
+    background: 'linear-gradient(135deg, #d1d5db, #9ca3af)',
+    accent: '#111827',
+    imageSrc: `${STICKER_BASE_PATH}/twemoji-panda.svg`,
+  },
+  {
     id: 'premium-table-10-dinosaur',
     rewardTable: 10,
-    rarity: 'legendario',
+    rarity: 'aventura',
     name: 'Dino supremo',
-    description: 'La recompensa mas premium del album.',
+    description: 'Una recompensa alegre para una tabla conocida y rapida.',
     background: 'linear-gradient(135deg, #6ee7b7, #34d399)',
     accent: '#ffffff',
     imageSrc: `${STICKER_BASE_PATH}/table-10-dinosaur.svg`,
@@ -386,9 +496,9 @@ const STICKER_LIBRARY: StickerDefinition[] = [
   {
     id: 'premium-table-10-cute-animals',
     rewardTable: 10,
-    rarity: 'legendario',
+    rarity: 'aventura',
     name: 'Mega pandilla',
-    description: 'Sticker especial para sesiones sobresalientes en el maximo nivel.',
+    description: 'Sticker especial para sesiones sobresalientes, pero de rareza moderada.',
     background: 'linear-gradient(135deg, #c4b5fd, #818cf8)',
     accent: '#ffffff',
     imageSrc: `${STICKER_BASE_PATH}/table-10-cute-animals.svg`,
@@ -396,9 +506,9 @@ const STICKER_LIBRARY: StickerDefinition[] = [
   {
     id: 'premium-table-10-cute-animals-2',
     rewardTable: 10,
-    rarity: 'legendario',
+    rarity: 'aventura',
     name: 'Fiesta final',
-    description: 'Otra recompensa legendaria para cuando el estudiante brilla en tablas altas.',
+    description: 'Otra recompensa accesible para cerrar una buena sesion.',
     background: 'linear-gradient(135deg, #f9a8d4, #c084fc)',
     accent: '#ffffff',
     imageSrc: `${STICKER_BASE_PATH}/table-10-cute-animals-2.svg`,
@@ -1580,6 +1690,10 @@ function App() {
 
             <p className="settings-description">
               Los stickers se desbloquean con 90% o mas de precision ponderada. Las tablas mas complejas entregan premios mas premium.
+            </p>
+
+            <p className="settings-summary">
+              Algunos stickers adicionales usan graficos de Twemoji bajo licencia CC-BY 4.0.
             </p>
 
             <div className="section-heading compact-heading">
