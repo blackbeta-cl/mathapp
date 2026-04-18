@@ -224,6 +224,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-2-squirrel.svg`,
   },
   {
+    id: 'table-2-turtle',
+    rewardTable: 2,
+    rarity: 'clasico',
+    name: 'Tortuga amable',
+    description: 'Otro premio suave para sesiones cuidadosas y constantes.',
+    background: 'linear-gradient(135deg, #dcfce7, #86efac)',
+    accent: '#166534',
+    imageSrc: `${STICKER_BASE_PATH}/table-2-turtle.svg`,
+  },
+  {
     id: 'table-3-penguin',
     rewardTable: 3,
     rarity: 'clasico',
@@ -232,6 +242,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     background: 'linear-gradient(135deg, #dbeafe, #93c5fd)',
     accent: '#1d4ed8',
     imageSrc: `${STICKER_BASE_PATH}/table-3-penguin.svg`,
+  },
+  {
+    id: 'table-3-hedgehog',
+    rewardTable: 3,
+    rarity: 'clasico',
+    name: 'Erizo curioso',
+    description: 'Suma variedad al album en los primeros avances.',
+    background: 'linear-gradient(135deg, #fed7aa, #fdba74)',
+    accent: '#9a3412',
+    imageSrc: `${STICKER_BASE_PATH}/table-3-hedgehog.svg`,
   },
   {
     id: 'table-4-bear',
@@ -254,6 +274,26 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-5-fox.svg`,
   },
   {
+    id: 'table-5-cow',
+    rewardTable: 5,
+    rarity: 'aventura',
+    name: 'Vaquita risuena',
+    description: 'Aparece cuando la practica media va tomando ritmo.',
+    background: 'linear-gradient(135deg, #e0f2fe, #93c5fd)',
+    accent: '#1d4ed8',
+    imageSrc: `${STICKER_BASE_PATH}/table-5-cow.svg`,
+  },
+  {
+    id: 'table-5-wild-boar',
+    rewardTable: 5,
+    rarity: 'aventura',
+    name: 'Jabali valiente',
+    description: 'Una variante extra para sesiones medianas bien resueltas.',
+    background: 'linear-gradient(135deg, #e9d5ff, #c4b5fd)',
+    accent: '#6d28d9',
+    imageSrc: `${STICKER_BASE_PATH}/table-5-wild-boar.svg`,
+  },
+  {
     id: 'table-6-raccoon',
     rewardTable: 6,
     rarity: 'aventura',
@@ -264,6 +304,26 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-6-raccoon.svg`,
   },
   {
+    id: 'table-6-crab',
+    rewardTable: 6,
+    rarity: 'aventura',
+    name: 'Cangrejo alegre',
+    description: 'Mas variedad en el tramo donde la dificultad empieza a subir.',
+    background: 'linear-gradient(135deg, #fecaca, #fda4af)',
+    accent: '#be123c',
+    imageSrc: `${STICKER_BASE_PATH}/table-6-crab.svg`,
+  },
+  {
+    id: 'table-6-shrimp',
+    rewardTable: 6,
+    rarity: 'aventura',
+    name: 'Camaron chispeante',
+    description: 'Premio adicional para sesiones medias con gran precision.',
+    background: 'linear-gradient(135deg, #fde68a, #fb7185)',
+    accent: '#9a3412',
+    imageSrc: `${STICKER_BASE_PATH}/table-6-shrimp.svg`,
+  },
+  {
     id: 'premium-table-7-elk',
     rewardTable: 7,
     rarity: 'premium',
@@ -272,6 +332,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     background: 'linear-gradient(135deg, #fdba74, #fb7185)',
     accent: '#ffffff',
     imageSrc: `${STICKER_BASE_PATH}/table-7-elk.svg`,
+  },
+  {
+    id: 'premium-table-7-polar-bear',
+    rewardTable: 7,
+    rarity: 'premium',
+    name: 'Oso polar premium',
+    description: 'Otra recompensa premium para tablas cada vez mas exigentes.',
+    background: 'linear-gradient(135deg, #dbeafe, #a5f3fc)',
+    accent: '#0f172a',
+    imageSrc: `${STICKER_BASE_PATH}/table-7-polar-bear.svg`,
   },
   {
     id: 'premium-table-8-lion',
@@ -294,6 +364,16 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     imageSrc: `${STICKER_BASE_PATH}/table-9-whale.svg`,
   },
   {
+    id: 'premium-table-9-crocodile',
+    rewardTable: 9,
+    rarity: 'legendario',
+    name: 'Cocodrilo titan',
+    description: 'Una variante legendaria reservada a tablas muy complejas.',
+    background: 'linear-gradient(135deg, #86efac, #22c55e)',
+    accent: '#14532d',
+    imageSrc: `${STICKER_BASE_PATH}/table-9-crocodile.svg`,
+  },
+  {
     id: 'premium-table-10-dinosaur',
     rewardTable: 10,
     rarity: 'legendario',
@@ -302,6 +382,26 @@ const STICKER_LIBRARY: StickerDefinition[] = [
     background: 'linear-gradient(135deg, #6ee7b7, #34d399)',
     accent: '#ffffff',
     imageSrc: `${STICKER_BASE_PATH}/table-10-dinosaur.svg`,
+  },
+  {
+    id: 'premium-table-10-cute-animals',
+    rewardTable: 10,
+    rarity: 'legendario',
+    name: 'Mega pandilla',
+    description: 'Sticker especial para sesiones sobresalientes en el maximo nivel.',
+    background: 'linear-gradient(135deg, #c4b5fd, #818cf8)',
+    accent: '#ffffff',
+    imageSrc: `${STICKER_BASE_PATH}/table-10-cute-animals.svg`,
+  },
+  {
+    id: 'premium-table-10-cute-animals-2',
+    rewardTable: 10,
+    rarity: 'legendario',
+    name: 'Fiesta final',
+    description: 'Otra recompensa legendaria para cuando el estudiante brilla en tablas altas.',
+    background: 'linear-gradient(135deg, #f9a8d4, #c084fc)',
+    accent: '#ffffff',
+    imageSrc: `${STICKER_BASE_PATH}/table-10-cute-animals-2.svg`,
   },
 ]
 
@@ -526,11 +626,12 @@ function formatStickerRarity(rarity: StickerDefinition['rarity']) {
   }
 }
 
-function getStickerDefinition(rewardTable: number) {
-  return (
-    STICKER_LIBRARY.find((sticker) => sticker.rewardTable === rewardTable) ??
-    STICKER_LIBRARY[STICKER_LIBRARY.length - 1]
-  )
+function getStickerDefinitions(rewardTable: number) {
+  const matchingStickers = STICKER_LIBRARY.filter((sticker) => sticker.rewardTable === rewardTable)
+
+  return matchingStickers.length > 0
+    ? matchingStickers
+    : [STICKER_LIBRARY[STICKER_LIBRARY.length - 1]]
 }
 
 function getStickerRewardMetrics(answers: AnswerRecord[]) {
@@ -567,14 +668,15 @@ function getStickerRewardMetrics(answers: AnswerRecord[]) {
   }
 }
 
-function getEarnedSticker(session: SessionRecord) {
+function getEarnedSticker(session: SessionRecord, variantIndex = 0) {
   const rewardMetrics = getStickerRewardMetrics(session.answers)
 
   if (!rewardMetrics.eligible) {
     return null
   }
 
-  const sticker = getStickerDefinition(rewardMetrics.rewardTable)
+  const matchingStickers = getStickerDefinitions(rewardMetrics.rewardTable)
+  const sticker = matchingStickers[variantIndex % matchingStickers.length]
 
   return {
     ...sticker,
@@ -588,8 +690,20 @@ function getEarnedSticker(session: SessionRecord) {
 }
 
 function getEarnedStickers(history: SessionRecord[]) {
+  const countersByTable = new Map<number, number>()
+
   return history.flatMap((session) => {
-    const sticker = getEarnedSticker(session)
+    const rewardMetrics = getStickerRewardMetrics(session.answers)
+
+    if (!rewardMetrics.eligible) {
+      return []
+    }
+
+    const currentCount = countersByTable.get(rewardMetrics.rewardTable) ?? 0
+    const sticker = getEarnedSticker(session, currentCount)
+
+    countersByTable.set(rewardMetrics.rewardTable, currentCount + 1)
+
     return sticker ? [sticker] : []
   })
 }
@@ -907,7 +1021,7 @@ function App() {
     challengeTimeLeftMs === null ? null : Math.max(0, Math.ceil(challengeTimeLeftMs / 1000))
   const challengeUrgency =
     challengeTimeLeftMs === null ? 0 : 1 - challengeTimeLeftMs / CHALLENGE_DURATION_MS
-  const latestEarnedSticker = latestResult ? getEarnedSticker(latestResult) : null
+  const latestEarnedSticker = latestResult ? earnedStickers.find((sticker) => sticker.sessionId === latestResult.id) ?? null : null
 
   useEffect(() => {
     saveHistory(history)
@@ -1467,8 +1581,6 @@ function App() {
             <p className="settings-description">
               Los stickers se desbloquean con 90% o mas de precision ponderada. Las tablas mas complejas entregan premios mas premium.
             </p>
-
-            <p className="settings-summary">Coleccion cargada desde la carpeta local <strong>svgs</strong>.</p>
 
             <div className="section-heading compact-heading">
               <div>
