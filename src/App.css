@@ -304,6 +304,10 @@
   gap: 14px;
 }
 
+.compact-heading {
+  margin-top: 8px;
+}
+
 .sticker-card,
 .reward-banner {
   display: flex;
@@ -318,6 +322,36 @@
 .reward-banner strong {
   display: block;
   color: #27193a;
+}
+
+.sticker-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sticker-catalog-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 22px;
+  background: #faf7ff;
+}
+
+.sticker-catalog-card.locked {
+  opacity: 0.75;
+}
+
+.sticker-catalog-card.locked .sticker-badge {
+  filter: grayscale(1);
+}
+
+.sticker-catalog-card p,
+.sticker-catalog-card small {
+  margin: 0;
+  color: #5d5372;
 }
 
 .sticker-title-row {
@@ -355,8 +389,48 @@
   object-fit: contain;
 }
 
+.sticker-badge-large {
+  width: 88px;
+  height: 88px;
+}
+
+.sticker-badge-large img {
+  width: 72px;
+  height: 72px;
+}
+
 .sticker-badge span {
   font-size: 2rem;
+}
+
+.sticker-count-badge,
+.sticker-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.sticker-count-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #7c3aed;
+  color: #fff;
+}
+
+.sticker-status.earned {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.sticker-status.locked {
+  background: #ede9fe;
+  color: #6d28d9;
 }
 
 .sticker-rarity {
@@ -958,6 +1032,10 @@ button:disabled {
   }
 
   .choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sticker-catalog-grid {
     grid-template-columns: 1fr;
   }
 

@@ -883,6 +883,12 @@ function App() {
   )
   const historyInsight = useMemo(() => getHistoryInsight(studentHistory), [studentHistory])
   const earnedStickers = useMemo(() => getEarnedStickers(studentHistory), [studentHistory])
+  const earnedStickerCounts = useMemo(() => {
+    return earnedStickers.reduce<Record<string, number>>((counts, sticker) => {
+      counts[sticker.id] = (counts[sticker.id] ?? 0) + 1
+      return counts
+    }, {})
+  }, [earnedStickers])
   const availableQuestionCount = useMemo(() => createQuestionPool(practiceSettings).length, [practiceSettings])
   const effectiveQuestionCount = useMemo(
     () => getEffectiveQuestionCount(practiceSettings),
@@ -1463,6 +1469,57 @@ function App() {
             </p>
 
             <p className="settings-summary">Coleccion cargada desde la carpeta local <strong>svgs</strong>.</p>
+
+            <div className="section-heading compact-heading">
+              <div>
+                <p className="section-label">Coleccion completa</p>
+                <h3>Todos los stickers disponibles</h3>
+              </div>
+            </div>
+
+            <div className="sticker-catalog-grid">
+              {STICKER_LIBRARY.map((sticker) => {
+                const earnedCount = earnedStickerCounts[sticker.id] ?? 0
+                const isUnlocked = earnedCount > 0
+
+                return (
+                  <article
+                    key={sticker.id}
+                    className={`sticker-catalog-card ${isUnlocked ? 'unlocked' : 'locked'}`}
+                  >
+                    <div
+                      className="sticker-badge sticker-badge-large"
+                      style={{ background: sticker.background, color: sticker.accent }}
+                      aria-hidden="true"
+                    >
+                      {sticker.imageSrc ? <img src={sticker.imageSrc} alt="" loading="lazy" /> : <span>{sticker.emoji}</span>}
+                    </div>
+
+                    {earnedCount > 1 && <span className="sticker-count-badge">x{earnedCount}</span>}
+
+                    <div className="sticker-title-row">
+                      <strong>{sticker.name}</strong>
+                      <span className={`sticker-rarity sticker-rarity-${sticker.rarity}`}>
+                        {formatStickerRarity(sticker.rarity)}
+                      </span>
+                    </div>
+
+                    <p>Se gana dominando una sesion donde destaque la tabla del {sticker.rewardTable}.</p>
+                    <small>{sticker.description}</small>
+                    <span className={`sticker-status ${isUnlocked ? 'earned' : 'locked'}`}>
+                      {isUnlocked ? 'Ganado' : 'Aun no ganado'}
+                    </span>
+                  </article>
+                )
+              })}
+            </div>
+
+            <div className="section-heading compact-heading">
+              <div>
+                <p className="section-label">Historial</p>
+                <h3>Premios ya obtenidos</h3>
+              </div>
+            </div>
 
             {earnedStickers.length > 0 ? (
               <div className="sticker-grid">
